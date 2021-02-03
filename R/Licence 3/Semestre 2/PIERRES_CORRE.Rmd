@@ -1,0 +1,629 @@
+---
+title: "DM Logiciel R4"
+author: "Stan PIERRES, Guillaume CORRE" 
+date: ""
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.height = 5, fig.width = 8)
+```
+
+```{r packages, echo=FALSE}
+library(ggpubr)
+library(gridExtra)
+library(car)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(lemon)
+library(lmtest)
+library(corrplot)
+library(stargazer)
+library(sandwich)
+library(leaps)
+library(data.table)
+library(gap)
+library(coefplot)
+```
+
+## Question 1
+```{r}
+data<-read.csv("Salaire.csv",header=TRUE,sep=",")
+head(data)
+colnames(data)
+attach(data)
+```
+Toutes les variables sont biens présentes.
+
+## Question 2
+```{r}
+str(data)
+data$sud=as.factor(data$sud)
+data$nonblanc=as.factor(data$nonblanc)
+data$femme=as.factor(data$femme)
+data$marie=as.factor(data$marie)
+data$syndicat=as.factor(data$syndicat)
+data$annee=as.factor(data$annee)
+str(data)
+```
+On transforme les variables dummies en facteur.
+
+## Question 3
+```{r}
+dataquant<-data[,-c(2,3,4,5,7,10,11)]
+mon_summary<-t(data.frame(min=apply(dataquant,2,min),Q25=apply(dataquant,2,quantile,.25),Mediane=apply(dataquant,2,median),Moy=apply(dataquant,2,mean),Q75=apply(dataquant,2,quantile,.75),max=apply(dataquant,2,max),ecart_type=apply(dataquant,2,sd)))
+mon_summary%>%kable(caption="Sommaire des variables quantitatives")
+
+mon_summary2<-t(data.frame(min=apply(dataquant[data$annee=="78",],2,min),Q25=apply(dataquant[data$annee=="78",],2,quantile,.25),Mediane=apply(dataquant[data$annee=="78",],2,median),Moy=apply(dataquant[data$annee=="78",],2,mean),Q75=apply(dataquant[data$annee=="78",],2,quantile,.75),max=apply(dataquant[data$annee=="78",],2,max),ecart_type=apply(dataquant[data$annee=="78",],2,sd)))
+mon_summary2%>%kable(caption="Sommaire des variables quantitatives pour l'année 1978")
+
+mon_summary3<-t(data.frame(min=apply(dataquant[data$annee=="85",],2,min),Q25=apply(dataquant[data$annee=="85",],2,quantile,.25),Mediane=apply(dataquant[data$annee=="85",],2,median),Moy=apply(dataquant[data$annee=="85",],2,mean),Q75=apply(dataquant[data$annee=="85",],2,quantile,.75),max=apply(dataquant[data$annee=="85",],2,max),ecart_type=apply(dataquant[data$annee=="85",],2,sd)))
+mon_summary3%>%kable(caption="Sommaire des variables quantitatives pour l'année 1985")
+
+```
+On remarque que la moyenne des variables est toujours inférieur en 1978 que avec les 2 années réunies, alors que au contraire, en 1985, les moyennes sont plus élevées. Il semble donc y avoir une relation positive entre l'année et les variables quantitatives.
+De plus, les variables expérience et âge ont des grands écarts types pour chacune des années.
+
+## Question 4
+```{r}
+par(mfrow=c(2,2))
+hist(education,prob=T,col="darkred",main="Répartition de la variable education",ylab="Densité",xlim=c(0,20))
+hist(experience,prob=T,col="darkred",main="Répartition de la variable experience",ylab="Densité",xlim=c(0,60))
+hist(lsalaire,prob=T,col="darkred",main="Répartition de la variable lsalaire",ylab="Densité")
+hist(age,prob=T,col="darkred",main="Répartition de la variable age",ylab="Densité",xlim=c(0,70))
+
+```
+
+Ici il est plus intéressant d'utiliser le logarithme du salaire car il y a un problème d'échelle entre cette variable et les autres. Le salaire est souvent donnée en milliers d'euros, en utilisant le log on corrige cela, en quelque sorte on "lisse" les données.
+
+## Question 5
+```{r,fig.height = 5, fig.width = 9}
+g<-ggplot(data, aes(x=data$lsalaire,y=data$education,fill=annee,color=annee))+
+  geom_point(size=2)+
+  labs(title="Log salaire en fonction de l'education et de l'annee",x="lsalaire",y="education")+
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  geom_smooth(method="lm")
+
+h<-ggplot(data, aes(x=data$lsalaire,y=data$experience,color=annee,fill=annee))+
+  geom_point(size=2)+
+  labs(title="Log salaire en fonction de l'experience et de l'annee",x="lsalaire",y="experience")+
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  geom_smooth(method="lm")
+
+i<-ggplot(data, aes(x=data$lsalaire,y=data$age,color=annee,fill=annee))+
+  geom_point(size=2)+
+  labs(title="Log salaire en fonction de l'age et de l'annee",x="lsalaire",y="age")+
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
+  geom_smooth(method="lm")
+
+grid.arrange(g,h,i,nrow=2,ncol=2)
+```
+
+
+Ici, on se rend compte que le salaire augmente pour toute les variables avec les années, on s'attend donc à une relation positive entre le salaire et l'annee et une relation positive entre les variables quantitatives et l'année. En ce qui concerne la relation entre la variable à expliquer et les variables quantitatives, elle semble être positive.
+
+## Question 6
+```{r}
+
+
+
+data2<-data[data$annee=="78",]
+data3<-data[data$annee=="85",]
+#Pourcentage de personnes n'habitant pas dans le sud en 1978
+(sum(data2$sud=="0")/550)*100 
+#Pourcentage de personnes habitant dans le sud en 1978
+(sum(data2$sud=="1")/550)*100
+#Pourcentage de personnes n'habitant pas dans le sud en 1985
+(sum(data3$sud=="0")/534)*100
+#Pourcentage de personnes habitant dans le sud en 1985
+(sum(data3$sud=="1")/534)*100
+
+#Pourcentage de personnes blanches en 1978
+(sum(data2$nonblanc=="0")/550)*100
+#Pourcentage de personnes de couleurs en 1978
+(sum(data2$nonblanc=="1")/550)*100
+#Pourcentage de personnes blanches en 1985
+(sum(data3$nonblanc=="0")/534)*100
+#Pourcentage de personnes de couleurs en 1985
+(sum(data3$nonblanc=="1")/534)*100
+
+
+#Pourcentage d'hommes en 1978
+(sum(data2$femme=="0")/550)*100
+#Pourcentage de femmes en 1978
+(sum(data2$femme=="1")/550)*100
+#Pourcentage d'hommes en 1985
+(sum(data3$femme=="0")/534)*100
+#Pourcentage de femmes en 1985
+(sum(data3$femme=="1")/534)*100
+
+
+#Pourcentage de non syndicat 1978
+(sum(data2$syndicat=="0")/550)*100
+#Pourcentage de syndicat 1978
+(sum(data2$syndicat=="1")/550)*100
+#Pourcentage de non syndicat en 1985
+(sum(data3$syndicat=="0")/534)*100
+#Pourcentage de syndicat en 1985
+(sum(data3$syndicat=="1")/534)*100
+
+
+#Pourcentage de personne non marié 1978
+(sum(data2$marie=="0")/550)*100
+#Pourcentage de personne  marié 1978
+(sum(data2$marie=="1")/550)*100
+#Pourcentage de personne non marié en 1985
+(sum(data3$marie=="0")/534)*100
+#Pourcentage de personne marié en 1985
+(sum(data3$marie=="1")/534)*100
+
+
+```
+
+```{r,fig.height = 5, fig.width = 9}
+o<-ggplot(data) + aes(x=annee,color=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "Annee", y = "Effectif") + 
+  ggtitle("Effectif par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank()+
+          geom_text(aes( label = scales::percent(..prop..),
+                         y= ..prop.. ), stat= "count") )
+
+j<-ggplot(data) + aes(x=sud, fill=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "Sud", y = "Effectif") + 
+  ggtitle("Effectif des personnes du sud ou non par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank()+
+          geom_text(aes( label = scales::percent(..prop..),
+                         y= ..prop.. ), stat= "count") )       
+#non blanc
+
+k<-ggplot(data) + aes(x=nonblanc, fill=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "nonblanc", y = "Effectif") + 
+  ggtitle("Effectif des personne de couleur ou non par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank())
+
+
+#Marie
+
+l<-ggplot(data) + aes(x=marie, fill=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "marie", y = "Effectif") + 
+  ggtitle("Effectif des personne mariés ou non par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank())
+
+
+#Syndicat
+
+m<-ggplot(data) + aes(x=syndicat, fill=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "syndicat", y = "Effectif") + 
+  ggtitle("Effectif des personne etant syndicat ou non par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank())
+
+n<-ggplot(data) + aes(x=femme, fill=annee) +
+  geom_bar(width = 0.5, position = "dodge")+
+  labs(x = "Femme", y = "Effectif") + 
+  ggtitle("Effectif en fonction du genre par année") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank()+
+          geom_text(aes( label = scales::percent(..prop..),
+                         y= ..prop.. ), stat= "count") ) 
+
+
+grid.arrange(o,j,k,l,m,n,nrow=3,ncol=2)
+
+```
+
+Ces graphiques nous permettent de voir qu'il y a une majorité de personnes qui ne viennent pas du sud, de meme les individus non blanc semblent etre en minorité, on voit egalement que les personnes mariées sont majoritaires et qu'il y a un pourcentage de personnes syndicalisés qui semble raisonnable pour des données de 1980.
+On voit aussi qu'il y a systématiqueent une difference entre les données de 1978 et les données de 1985, toutefois cette différence est vraiment très faible donc on peut considerer que les effectifs sont quasiment les mêmes entre les années.
+
+## Question 7
+```{r}
+a<-ggplot(data, aes(x=sud,y=data$lsalaire,color=sud))+
+  geom_boxplot(varwidth =T)
+
+b<-ggplot(data, aes(x=nonblanc,y=data$lsalaire,color=nonblanc))+
+  geom_boxplot()
+
+c<-ggplot(data, aes(x=marie,y=data$lsalaire,color=marie))+
+  geom_boxplot()
+
+d<-ggplot(data, aes(x=syndicat,y=data$lsalaire,color=syndicat))+
+  geom_boxplot()
+
+e<-ggplot(data, aes(x=annee,y=data$lsalaire,color=annee))+
+  geom_boxplot()
+
+f<-ggplot(data, aes(x=femme,y=data$lsalaire,color=femme))+
+  geom_boxplot()
+
+grid.arrange(a,b,c,d,e,f,nrow=2,ncol=3)
+```
+Ici, une chose assez intéréssante à voir est que la mediane pour les nonblanc et les blanc est quasiment identique, on aurait pû penser à une discrimination de salaire. La variable nonblanc qui semblait intérressante de base, ne sera peut être pas obligé d'être utilisée dans le modèle sans une intéraction. Alors que au contraire, le fait d'être syndicat semble améliorer le niveau de salaire, tout comme le fait d'être une femme semble faire baisser le salaire.
+
+## Question 8
+```{r}
+mcor<-cor(dataquant)
+mcor
+par(mfrow=c(1,1))
+corrplot(mcor,type="upper",addCoef.col = "black",method="color")
+
+
+```
+
+
+Dans la matrice de corrélation, on voit que les variables âge et expérience sont extremements corrélées, ainsi on peut d'ores et déjà dire que nous ne mettrons pas ces deux variables simultanement dans notre modèle pour éviter de rencontrer un problème de colinéarité.On peut également voir qu'il semble y avoir une corrélation positive entre le salaire et l'éducation ainsi que l'expérience.
+
+## Question 9
+
+
+On a vu d'après les questions précédentes qu'il semblait y avoir une corrélation positive entre entre le lsalaire et l'annee, nous allons donc integrer cette variable dans notre modèle.
+
+Même si on voit une relation entre les variables explicatives sud et marie avec la variable expliqué lsalaire, d'un point de vue économique, nous ne pensons pas que le fait qu'une personne soit marié ou non puisse changer son niveau de salaire.
+De meme si la personne habite dans le sud ou non.
+Au contraire, les variables femmes,nonblanc education, expérience et syndicat semblent plus adéquates.
+
+```{r}
+plot(dataquant)
+```
+
+
+On voit à travers cette representation la très forte corrélation entre expérience et âge, on peut prudemment dire que se sont les "mêmes variables" et que donc on ne pourra pas utiliser les deux dans le même modèle comme vu à la question 8.
+Voici un premier modèle avec toutes les variables chosies grâce aux explications précèdentes : 
+
+lsalaire = B0 + B1education +B2experience + B3femme +B4nonblanc +B5syndicat + B6annee + erreur
+
+```{r,fig.height = 7, fig.width = 7}
+reg1<-lm(lsalaire~education+experience+nonblanc+femme+syndicat+annee,data=data)
+summary(reg1)
+
+```
+On obtient des coefficients logique d'un point de vue économique. De plus, les variables sont significatves grâce au test de student(pvalue<0.05).
+Toutefois nous allons voir si nous pouvons améliorer notre modèle.
+```{r}
+recherche<-regsubsets(lsalaire~.,int=T,nbest=1,nvmax=9,method="exhaustive",really.big=T,data=data)
+plot(recherche,scale="r2")
+summary(recherche)
+```
+Grâce à ce graphique, on se rend compte que l'on peut obtenir un modèle avec un R2 quasiment similaire mais avec moins de variables explicatives, ce qui est intéressant pour la stabilité du modèle.On décide donc de retirer la variable nonblanc.(En plus du graphique précedent, on avait que la médiane semblait la même entre blanc et non blanc.)
+On peut prendre ce modèle :
+
+lsalaire = B0 + B1experience + B2education + B3femme +B4syndicat +B5annee + erreur
+
+```{r}
+reg2<-lm(lsalaire~experience+education+femme+syndicat+annee,data=data)
+summary(reg2)
+
+```
+Les coefficients sont toujours logique et les variables significatives grâce aux tests de student.
+Enfin, pour améliorer le modèle, nous avons penser que ce serait interressant avec ces variables de savoir si l'écart de salaire entre les femmes et les hommes pouvait augmenter avec l 'experience
+Voici un premier graphique pour voir si il peut y avoir un lien : 
+
+```{r}
+ggplot(data, aes(x=experience, y=lsalaire, fill=femme))+
+  geom_smooth(method="lm")+
+  geom_point()
+
+```
+
+Il semble donc y avoir une différence entre les hommes et les femmes mais l'écart de salaire ne semble pas vraiment augmenter avec l'expérience. Si on ajoute cette interaction au modèle, on obtient : 
+
+lsalaire = B0 + B1education +B2experience + B3femme +B4experience*femme +B5syndicat + B6annee + erreur
+
+Ce modèle sera le modèle retenu pour la suite.
+
+```{r}
+reg3<-lm(lsalaire~education+experience*femme+annee+syndicat,data=data)
+summary(reg3)
+#model.tables(reg3) je sais pas encore quoi faire avec ca
+
+```
+
+
+
+Interprétation de la régression : 
+Premièrement, toutes les variables sont significatives, pvalue <0.05 si on prend un risque à 5%.
+De plus, la significativité globale est maintenu car la statistique de Fisher est grande.
+On a un modèle Log-niveau pour toutes variables, calculons les effets marginaux : 
+
+
+```{r}
+(exp(.088987)-1)*100 #education
+(exp(-0.161388)-1)*100 #femme
+(exp(.403029)-1)*100 #1985
+(exp(.212132)-1)*100 #Syndicat
+```
+
+
+
+Ainsi, une hausse d'une unité d'education qui peut s'apparenter à une année d'étude supplementaire entraîne une hausse de 9,30% de la moyenne géométrique du salaire,
+pour ce qui est de l'expérience, une année supplementaire n'entraîne une hausse que d'1% du salaire.
+L'effet d'une année d'étude est donc beaucoup plus important que l'effet d'une année d'expérience.
+Le fait d'être une femme a un effet non négligeable sur le salaire puis cela entraine une baisse de 14,9% du salaire par rapport aux hommes.
+On peut aussi remarquer,que le fait d'être en 1985 entraîne une moyenne géométrique des salaires 49% plus
+élevé.
+Le fait d'être syndicat permet quand à lui de majoré la moyene géométrique du salaire d'environ 23%.
+
+Pour l'interaction entre femme et experience, si on a une femme, on aura
+lsalaire = B0 + B1education +B2experience + B3femme +B4experience*femme +B5syndicat + B6annee + erreur et l'effet marginal se calculera avec B2+B4
+Si on a un homme, on aura:
+
+lsalaire = B0 + B1education +B2experience+B5syndicat + B6annee, donc l'effet marginal se calculera seulement avec B2
+
+```{r}
+(exp(.014749)-1)*100#experience avec B2 donc pour un homme
+(exp(.014749-0.006201)-1)*100
+```
+On remarque donc que le fait d'être une femme à un effet moins important sur le salaire si on gagne une année d'expérience que si on est un homme.
+Il semble donc que l'écart de salaire s'accroit avec l'expérience entre les hommes et les femmes.
+
+
+
+## Question 10
+```{r}
+#Règle de KLEIN
+cor(dataquant)^2 > summary(reg3)$r.squared
+#Il semble y avoir de la colinéarité seulement entre experience et age ce qui avait deja été determiné plus tot.
+vif(reg3)
+#On n'écarte aucunes variables explicatives.
+#Il ne semble donc pas y avoir de colinearite entre les variables explicatives dans le modele
+
+```
+
+## Question 11
+```{r}
+data$salaireadjust<-ifelse(data$annee=="78",data$lsalaire,data$lsalaire-log(1.65))
+#On ajoute une variable qui ajuste le lsalaire avec la déflation pour 1985.
+
+regadjust<-lm(salaireadjust~education+experience*femme+annee+syndicat,data=data)
+summary(regadjust)
+#On remarque que le R2 baisse ainsi que la valeur de la statistique de Fisher, mais les variables restent significatives.
+coefplot(reg3, decreasing = TRUE, sort = "magnitude")
+coefplot(regadjust, decreasing = TRUE, sort = "magnitude")
+
+```
+
+On remarque que seul le coefficient pour la variable année change, dans le modèle avec déflation, passant de 0,40 à -0.09
+
+
+```{r}
+#=> interpretation log niveau avec annee, donc augmente de 49,6% la moyenne géometrique de lsalaire
+(exp(0.403029)-1)*100 
+#=> interpretation log niveau avec annee, donc augmente de -9,3% la moyenne géometrique de salaireadjust
+(exp(-0.097747)-1)*100
+
+```
+
+## Question 12
+
+On peut mettre en place un test de Chow pour comparer "deux modèles" dans un même modèle
+```{r}
+
+summary(reg78<-lm(lsalaire~education+experience*femme+syndicat,data=subset(data, data$annee=="78")))
+summary(reg85<-lm(lsalaire~education+experience*femme+syndicat,data=subset(data, data$annee=="85")))
+summary(regtot<-lm(lsalaire~education+experience*femme+syndicat,data=data))
+
+SCR78=sum(reg78$residuals^2)
+SCR85=sum(reg85$residuals^2)
+SCRtot=sum(regtot$residuals^2)
+(CHOWF=((SCRtot-(SCR78+SCR85))/(SCR78+SCR85))*(1084-12)/(6))
+
+qf(.95, df1=6, df2=1074)
+pf(CHOWF,df1=6, df2=1074,lower.tail = FALSE)
+
+
+```
+On a tous d'abord écrit notre modèle pour l'année 78 puis notre modèle pour l'année 85.
+Ensuite, nous avons calculé la somme des carrés des résidus pour chaque modèles.
+Enfin, on a calculé la statistique observé et on la compare avec la statistique de la table.
+On voit que la statistique observée est plus élevée que la valeur de la table.
+De plus, la p value est très faible ce qui signifie que l'on peut rejetter l'hypothèse H0 que tous les coefficients sont égaux, la relation estimée a donc changée avec les années.
+
+
+
+## Question 13
+```{r}
+reg13<-lm(data$lsalaire~annee*femme)
+summary(reg13)
+```
+Le modèle s'écrit :
+lsalaire = B0 + B1femme + B2annee + B3annee*femme + erreur
+Tout d'abord, il semble que l'interaction entre femme et année soit significative.
+Interpretons les effets marginaux pour savoir si l'ecart de salaire à augmenter ou pas
+
+Si on est une femme en 78 :
+
+lsalaire = B0 +B2femme
+```{r}
+1+1
+(exp(-1.679358)-1)*100
+```
+Donc un impact de -81,35% sur la moyenne géométrique du lsalaire
+
+Si on est une femme en 85:
+
+lsalaire = B0+ B1année +B2femme +B3annee*femme
+```{r}
+(exp(-1.679358+0.017037)-1)*100
+```
+Donc un impact de -81,03% sur la moyenne géométrique du lsalaire
+
+Si on est un homme en 78: 
+
+lsalaire = B0
+
+Si on est un homme en 85:
+
+lsalaire = B0 + B1annee
+```{r}
+(exp(0.050337)-1)*100
+```
+Augmente de 5% la moyenne géométrique du salaire.
+
+
+
+```{r}
+(exp(0.017037)-1)*100
+```
+L'effet marginal de l'interaction est seulement de 1.7%
+Le coefficient correspondant à l'intéraction annee:femme est postif, cela veut dire que le coefficient année va augmenter de 0.017037 si on est une femme, et donc dire que l'écart de salaire va diminuer mais très peu.
+Faisons un test de chow : 
+```{r}
+library(strucchange)
+sctest(lsalaire~femme*annee,data=data,type="Chow")
+```
+La pvalue(<0.05) de ce test montre que l'on peut rejetter l'hypothèse H0 donc il est possible que le gender gap est évolué.
+
+```{r}
+femme78<-c(mean(lsalaire[femme=="1"& annee=="78"]))
+femme85<-c(mean(lsalaire[femme=="1"& annee=="85"]))
+homme78<-c(mean(lsalaire[femme=="0"& annee=="78"]))
+homme85<-c(mean(lsalaire[femme=="0"& annee=="85"]))
+ecart78<-c(homme78-femme78)
+ecart85<-c(homme85-femme85)
+matrice<-matrix(c(femme78,femme85,homme78,homme85,ecart78,ecart85),nrow=6,ncol=1)
+rownames(matrice)<-c("femme 78","femme 85","homme 78", "homme 85","Ecart 78","Ecart85")
+colnames(matrice)<-c("Moyenne/Ecart")
+matrice%>%kable(caption="Ecart de moyenne du salaire entre homme et femme par année")
+
+```
+On remarque que l'écart des moyennes semblent avoir baissé de plus de 0.1 ce qui n'est pas négligeable lorsque l'on affecte le logarithme à la variable salaire.
+
+## Question 14
+```{r}
+fitted=predict(reg3, data)
+plot(lsalaire~fitted,main="Preticted vs actual",xlab="valeurs predites",ylab="valeurs actuelles")
+abline(a=0, b=1, col="red")
+```
+
+Le modèle est plutôt correct
+```{r,fig.height = 5, fig.width = 6}
+par(mfrow=c(1,1))
+hist(reg3$residuals, freq=FALSE,col="darkred",main="Distribution des résidus",xlab="Résidus",ylab="Densité",xlim=c(-3,3),ylim=c(0,1))
+lines(density(reg3$residuals),col="blue")
+```
+
+La distribution des résidus suit la distribution d'une loi normale, ils sont biens centrés sur 0
+
+```{r}
+qqPlot(reg3, id.n=2)
+
+```
+Ce graphique permet de comparer les résidus avec la distribution normale.Les points suivent parfaitement la ligne donc le terme d'erreur est distribué normalement. Le graphique nous donne deux observations avec de grands résidus standardisés, ce sont des observations divergentes.
+
+
+```{r}
+residualPlots(reg3)
+
+```
+Pour la variable education, aucune structure n'apparait, le modèle est adéquat.
+Les variables dummies ont à chaque fois les mêmes medianes , donc le modèle est bien spécifié.
+Pour la variable expérience, la courbe est quasiment linéaire , donc la distribution des résidus semble bonne, la relation n'est pas assez non linéaire pour
+mettre la variable sous une autre forme.
+Le graphique en bas à droite, montre que le modèle semble adéquat.
+De plus le test de tukey nous dit que les moyennes des résidus ne semblent pas vraiment différentes (tukey value < pvalue).
+
+```{r}
+par(mfrow=c(2,2))
+plot(reg3)
+```
+Graphiquement, les résidus semblent plutôt constant, il n'y a pas d'explosions de la valeurs des résidus, toutefois certaines observation ont des résidus standardisés assez élevés. Vérifions par un test qu'il n'y a pas d'hétéroscédasticité.
+```{r}
+bptest(reg3)
+```
+La p_value est inférieur au risque de première espèce, on rejette l'hypothèse H0 donc il semble y avoir de l'hétéroscédasticité.
+```{r}
+library(sandwich)
+reg3 %>% vcovHC %>% diag() %>% sqrt()
+```
+On obtient ici les ecarts types robustes après avoir corrigé la matrice des variances-covariances.
+On remarque que les écarts types sont extremement proches des écarts types standardisés, les variables restent donc toutes significatives.
+Donc même avec la correction de l'hétéroscédasticité, les variables sont significatives. Le modèle ne semble pas présenter de problèmes.
+
+## Question 15
+
+```{r}
+head(sort(hatvalues(reg3),decreasing = T))
+#345,773 ont les plus grands résidus standardisés
+#Toutefois on remarque que énormément de points ont quasiment les mêmes résidus standardisés. Il n'y a pas vraiment de points qui se démarquent et les résidus standardisés sont plutôt faibles.
+```
+
+```{r}
+mean(experience)
+mean(education)
+data[c("72","1068","773","345"),c("experience","education")]
+```
+
+On voit que les 2 observations avec les plus grands résidus standardisés trouvés précedemment sont loin des moyennes et donc loin du point moyen.
+Pour les observation 72 et 1068, c'est sur la variable expérience que ces deux observation sont très loin.
+Ces observations ont donc un gros impact sur la régression, ce sont des points divergents.
+
+```{r}
+par(mfrow=c(1,1))
+influencePlot(reg3)
+```
+
+
+On retrouve bien les 3 points les plus divergents, grâce au graphique on peut mesurer leur impacts.
+L'observation 72 a une valeur levier faible et un residu standardisé très faibles, son impact est plutot important.
+L'observation 1068 a une valeur levier proche de 0 et un residu standardisé très faible, son impact est un peu moins fort que pour l'observation 72
+L'observations 799 a une valeur levier assez faible mais un residu standardisé très élevé, donc un impact important.
+Les observations 345 et 773, ont une valeur levier importante mais un résidu proche de 0
+
+```{r}
+dfbs.reg3 <- dfbetas(reg3)
+dfbs.reg3=as.data.table(dfbs.reg3)
+head(dfbs.reg3)
+
+ggplot(dfbs.reg3, aes(x=lsalaire, y=education, label = rownames(data)))+
+  geom_text()+
+  geom_point()
+ggplot(dfbs.reg3, aes(x=lsalaire, y=experience, label = rownames(data)))+
+  geom_text()+
+  geom_point()
+```
+
+On voit clairement que 72 et 1068 sont éloignés du nuage de points dans les 2 graphiques.
+De plus, la donnée 72 semble abérrante car le lsalaire est de -0.47 ce qui n'est pas possible.
+Toutefois, on remarque qu'il y a plusieurs points qui sont éloignés et pas seulement ceux trouvés à la question précèdente, il sera donc difficile de savoir quels sont les points à vraiment enlevés.
+
+```{r}
+datafinale<-data[-c(72,1068,799,345),]
+```
+
+```{r}
+mean(experience)
+mean(datafinale$experience)
+mean(education)
+mean(datafinale$education)
+```
+
+Sans ses valeurs, la moyenne d'expérience baisse et celle d'éducation augmente, toutefois la difference reste faible.
+
+```{r}
+regfinale=lm(lsalaire~education+experience*femme+annee+syndicat,data=datafinale)
+summary(regfinale)
+```
+On remarque que le R2 a été amélioré mais que les coefficients n'ont pas été impactés.
+
+
