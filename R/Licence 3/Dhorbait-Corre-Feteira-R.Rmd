@@ -1,0 +1,752 @@
+---
+title: 'Rapport final : Étude du QCM'
+author: ' CORRE, FETEIRA '
+lang: fr
+date: ' '
+output:
+  rmdformats::readthedown:
+    highlight: kate
+  pdf_document:
+    dev: tikz
+    df_print: kable
+    keep_tex: yes
+    number_section: yes
+    toc: yes
+editor_options:
+  chunk_output_type: console
+---
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.height = 4, fig.width = 8, sanitize = TRUE)
+```
+
+```{r packages}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(lemon)
+```
+
+```{r tikz-sanitize}
+options(
+tikzSanitizeCharacters = c('%','}','{','^','_','&','~',"é","É","è","È","à","À"),
+tikzReplacementCharacters = c('\\%','\\}','\\{','\\^{}','\\_{}',
+'\\&','\\char`\\~',"\\'e","\\'E","\\`e","\\`E","\\`a","\\`A")
+)
+```
+
+```{r, importation données}
+data <- read.table("data_QCM.csv", sep = ";", header = TRUE, encoding = "UTF-8")
+inscrits <- read.table("inscrits_1819.csv", sep = ";",header = TRUE)
+bonnes_reponses <- read.table("bonnes_reponses.csv", sep=";", encoding = "UTF-8")
+data_bin <- read.table("Reponses_Binaires.csv",header=TRUE, sep=",")
+```
+
+```{r, sexe et bac}
+data$bac <- ordered(data$bac, levels=c("Bac ES","Bac S","Bac L","Bac STMG","Bac professionnel"))
+levels(data$sexe) <- c("Masculin", "Féminin")
+```
+
+```{r, kable_plus}
+if (knitr::is_latex_output()) {
+  kable_plus<-function(tab, transp = FALSE, digits =2, titre=NULL,...){
+      if( transp ){
+        tab %>% t() %>% kable(caption=titre, digits = digits,
+                              booktabs=TRUE) %>%
+          kable_styling(full_width = F, position = "center", latex_options = c("striped","hold_position"),...)
+      } else {
+        tab %>% kable(caption=titre, digits = digits, booktabs=TRUE) %>%
+          kable_styling(full_width = F, position = "center",...)
+      }
+    }
+  } else {
+  kable_plus<-function(tab, transp = FALSE, digits = 2, titre=NULL,...){
+      if(transp){
+        tab %>% t() %>% kable(caption=titre, digits = digits) %>%
+          kable_styling(full_width = F, position = "center",bootstrap_options = c("striped"),...)  
+      } else {
+        tab %>% kable(caption=titre, digits = digits, booktabs=TRUE) %>%
+          kable_styling(full_width = F, position = "center",bootstrap_options = c("striped"),...)
+      }
+    }
+  }
+```
+
+```{r, notes avec coeff}
+m2 <- function (x) {
+  2*x
+}
+m3 <- function (x) {
+  3*x
+}
+
+data_points <- data_bin %>% 
+  mutate_each(
+    ends_with("4"),ends_with("5"),ends_with("6"),ends_with("7"),
+    fun = m2 ) %>% # les questions finissant par 4, 5, 6 ou 7 valent 2 points
+  mutate_each(
+    ends_with("8"),ends_with("9"),ends_with("10"),
+    fun = m3 ) # les questions finissant par 8, 9 ou 10 valent 2 points
+```
+
+
+```{r, somme les notes avec coefficient}
+data_points <- data_points %>% mutate(
+  hist_note = data_points %>% select(starts_with("hist")) %>% rowSums(),
+  geo_note = data_points %>% select(starts_with("geo")) %>% rowSums(),
+  eco_note = data_points %>% select(starts_with("eco")) %>% rowSums(),
+  litt_note = data_points %>% select(starts_with("litt")) %>% rowSums(),
+  mat_note = data_points %>% select(starts_with("mat")) %>% rowSums(),
+  sport_note = data_points %>% select(starts_with("sport")) %>% rowSums(),
+  note_totale = rowSums(data_points)
+)
+```
+
+```{r, questions maths sans physique}
+Maths <- data_points %>% select(contains("mat"))
+Maths<- Maths[,-c(2,3,4,5,8,11)]
+Note_maths= rowSums(Maths)*20/11
+Note_maths<- round(Note_maths,2)
+Maths<-data.frame(Maths, Note_maths)
+```
+
+```{r, données maths et eco}
+data<-data.frame(data, Note_maths)
+
+data2<- function(x,y) {
+  cbind(select(data,contains(x)),select(data,contains(y)),
+        select(data,contains("bac")), select(data,contains("annee")), 
+        select(data,contains("sexe")))
+}
+
+data_mat_eco<-data2("eco", "mat")
+
+data_mat_eco<- 
+  data_mat_eco[data_mat_eco$bac=="Bac ES" | data_mat_eco$bac=="Bac S",]
+data_mat_eco$bac<- droplevels(data_mat_eco$bac, exclude =NULL)
+
+```
+\pagebreak
+# Introduction
+
+Nous nous sommes rendus compte que la part des mathématiques dans les études d'économie était importante. Nous voulons donc savoir si l'avancé dans les études d'économie améliore notre niveau de mathématiques.
+Dans ce rapport, nous allons mettre en relation les notes de mathématiques et d'économie selon la filière (personne ayant fait un bac ES ou S) et l'année de licence (L1, L2 et L3). Ce qui va nous amener à nous demander :
+Est ce que les études d'économie permettent d'améliorer notre niveau en mathématiques selon ce QCM ?
+
+Tout d'abord, nous traiterons la partie mathématique, en determinant si les questions de physique ont un impact sur les notes de mathématiques, ensuite nous traiterons rapidement les questions liées à l'économie, enfin nous ferons des comparaisons ainsi que de simples modèles économétriques pour étudier la relation entre l'économie et les mathématiques.
+Voici un graphique d'introduction représentant les effectifs par année et par bac :
+
+```{r, effectif par année}
+ggplot(data_mat_eco) + aes(x=annee, fill=bac) +
+        geom_bar(width = 0.5, position = "dodge")+
+        labs(x = "Années", y = "Effectif") + 
+  ggtitle("Effectif des répondants par année") +
+  theme_dark() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank()) +
+  geom_text(aes(label = ..count..), stat = "count", 
+              position = position_dodge(0.5), vjust=-0.2, col="white")
+```
+
+
+Nous remarquons que les L1 ont le plus répondu au QCM et que les L2 et L3 ont un effectif plutôt équivalent.Toutefois cela peut s'expliquer par le fait que les L1 sont plus nombreux. En terme de proportion il est probable que les L2 et L3 aient plus répondu par rapport à leur effectif.
+
+\pagebreak
+# Étude des réponses aux questions mathématiques
+
+## En fonction de l'année d'étude
+
+Ce premier graphique représente la distribution des notes de mathématiques selon l'année de Licence.
+
+```{r, distribution avec densite selon l annee de licence}
+plot_colors <- c("blue", "purple", "red", "lightblue")
+mean_L1<- mean(data_mat_eco$mat_note[data_mat_eco$annee=="L1"])
+mean_L2<- mean(data_mat_eco$mat_note[data_mat_eco$annee=="L2"])
+mean_L3<- mean(data_mat_eco$mat_note[data_mat_eco$annee=="L3"])
+
+hist(data_mat_eco$mat_note, freq =FALSE, ylim=c(0,0.15),xlim = c(0,20),
+     las =1,col = "lightblue", border="white" ,xlab = "Notes", ylab="", 
+     main = "Différence de distribution des notes de mathématiques \n selon l'année de Licence")
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L1"]), 
+      col="blue", lwd =2)
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L2"]), 
+      col="purple", lwd =2)
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L3"]), 
+      col="red", lwd =2)
+
+segments(mean_L1,-0.07,9.36,0.005,col="blue")
+segments(mean_L2,-0.07,9.58,0.005,col="purple")
+segments(mean_L3,-0.07,10.82,0.005,col="red")
+text(x=9.05,y=0.01,"9.36",col="blue",cex=0.7)
+text(x=9.75,y=0.01,"9.58",col="purple",cex=0.7)
+text(x=10.8,y=0.01,"10.82",col="red",cex=0.7)
+
+legend("topright", 
+       legend=c("L1","L2","L3", "tous"), 
+       col=plot_colors, pt.cex=2, pch=15, bty = "n")
+```
+
+
+À travers ce graphique, nous pouvons observer que plus on avance dans les années, meilleurs les résultats sont. Cependant, sur les courbes de densités il est assez difficile de se rendre compte de ce résultat à première vue. On ajoute donc les moyennes pour nous permettre de vérifier cette hypothèse.
+
+
+
+## En fonction du bac
+
+Il est également intéressant de regarder si le bac a un impact sur les notes de mathématiques.
+Commençons par un tableau représentant la proportion de personnes ayant une note au-dessus ou en-dessous de la moyenne.
+
+```{r, proportion des notes selon la moyenne}
+v7<-c(sum(data_mat_eco$mat_note[data_mat_eco$bac=="Bac ES"]>10)/
+        length(data_mat_eco$mat_note[data_mat_eco$bac=="Bac ES"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$bac=="Bac ES"]<=10)/
+        length(data_mat_eco$mat_note[data_mat_eco$bac=="Bac ES"]))
+
+v8<-c(sum(data_mat_eco$mat_note[data_mat_eco$bac=="Bac S"]>10)/
+        length(data_mat_eco$mat_note[data_mat_eco$bac=="Bac S"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$bac=="Bac S"]<=10)/
+        length(data_mat_eco$mat_note[data_mat_eco$bac=="Bac S"]))
+
+
+tab2<-cbind(v7,v8)
+rownames(tab2)<-c("Supérieure à 10","Inférieure à 10")
+colnames(tab2)<-c("Bac ES","Bac S")
+
+tab2 %>%
+  kable(
+    caption="Proportion des notes au-dessus et en-dessous de la moyenne",
+    digits=c(3,3)) %>%
+  kable_styling(full_width = FALSE,
+                position = "center",
+                latex_options = c("striped", "HOLD_position")) %>%
+  column_spec(1, bold=T) %>%
+  row_spec(0, bold=TRUE)
+```
+
+
+À la lecture du tableau, nous pouvons constater que les personnes ayant obtenu un bac S ont en moyenne une meilleure note en mathématique que les personnes ayant obtenu un bac ES. En effet, on remarque que 67% des personnes ayant un bac ES n'ont pas la moyenne contre seulement 42% pour les personnes titulaires d'un bac S.
+
+À présent, voici deux histogrammes représentant les notes de mathématiques obtenues par les S et ES ainsi que les données trouvées dans le tableau précédent.
+
+```{r, barplot}
+dataES<-data_mat_eco %>%filter(data_mat_eco$bac=="Bac ES")
+dataS<-data_mat_eco %>%filter(data_mat_eco$bac=="Bac S")
+
+ggplot_ES<-ggplot(data=dataES) +
+  aes(x=mat_note)   +                  
+  geom_histogram(bins = 15 , col = "white", fill="darkred") +            
+  labs(subtitle="Bac ES",x="Note",y="Effectif") +
+  theme_dark() +
+  theme(axis.text = element_text(size=8), title=element_text(size=9),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  expand_limits(x=c(0,20),y=c(0,15))+
+  geom_vline(xintercept=10, linetype="dashed", color = "orange") +
+  geom_segment(aes(x = 10, y = 15, xend = 20, yend = 15), 
+               arrow = arrow(length = unit(0.2, "cm"))) +
+  geom_text(x=15, y=14, label="33%",color="orange") +
+  geom_segment(aes(x= 10, y= 15, xend= 0, yend=15),
+               arrow = arrow(length = unit(0.2,"cm"))) +
+  geom_text(x=4,y=14,label="67%",color="orange")
+
+
+ggplot_S<-ggplot(data=dataS) + aes(x=mat_note) +                  
+  geom_histogram(bins = 15 ,col = "white", fill="darkred") +            
+  labs(subtitle="Bac S",x="Note",y="Effectif") +
+  theme_dark()+
+  theme(axis.text = element_text(size=8), title=element_text(size=9),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  expand_limits(x=c(0,20),y=c(0,15))+
+  geom_vline(xintercept=10, linetype="dashed", color = "orange") +
+  geom_segment(aes(x = 10, y = 15, xend = 20, yend = 15),
+               arrow = arrow(length = unit(0.2,"cm"))) +
+  geom_text(x=15, y=14, label="58%",color="orange") +
+  geom_segment(aes(x= 10, y= 15, xend= 0, yend=15),
+               arrow = arrow(length = unit(0.2,"cm"))) +
+  geom_text(x=4,y=14,label="42%",color="orange")
+
+
+grid.arrange(ggplot_ES,ggplot_S,
+             layout_matrix = matrix(c(1,2), ncol=2),
+             top= text_grob(
+               "Répartition des notes de mathématiques par bac",
+                           size=16))
+```
+
+
+Nous apercevons donc bien une plus grande concentration de personnes ayant eu une note en-dessous de la moyenne pour les bac ES que pour les bac S et une plus grande concentration de personnes ayant eu une note au-dessus de la moyenne pour les bac S par rapport aux bac ES.
+
+
+## Différences entre notes avec physique et sans physique
+
+Après avoir rapidement étudié les notes de mathématiques en fonction du bac obtenu et de l'année, nous avons décidé de regarder si les questions de physiques avaient un impact sur les notes finales obtenues en mathématiques.
+
+Tout d'abord, voici un tableau récapitulatif des personnes ayant amélioré ou détérioré leurs notes grâce à la physique.
+
+```{r, amelioration/deterioration avec/sans les notes de physique}
+v4<-c(sum(data_mat_eco$mat_note[data_mat_eco$annee=="L1"]
+          >data_mat_eco$Note_maths[data_mat_eco$annee=="L1"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L2"]
+          >data_mat_eco$Note_maths[data_mat_eco$annee=="L2"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L3"]
+          >data_mat_eco$Note_maths[data_mat_eco$annee=="L3"]),
+      sum(data_mat_eco$mat_note>data_mat_eco$Note_maths))
+
+v5<-c(sum(data_mat_eco$mat_note[data_mat_eco$annee=="L1"]
+          <data_mat_eco$Note_maths[data_mat_eco$annee=="L1"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L2"]
+          <data_mat_eco$Note_maths[data_mat_eco$annee=="L2"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L3"]
+          <data_mat_eco$Note_maths[data_mat_eco$annee=="L3"]),
+      sum(data_mat_eco$mat_note<data_mat_eco$Note_maths))
+
+v6<-c(sum(data_mat_eco$mat_note[data_mat_eco$annee=="L1"]
+          ==data_mat_eco$Note_maths[data_mat_eco$annee=="L1"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L2"]
+          ==data_mat_eco$Note_maths[data_mat_eco$annee=="L2"]),
+      sum(data_mat_eco$mat_note[data_mat_eco$annee=="L3"]
+          ==data_mat_eco$Note_maths[data_mat_eco$annee=="L3"]),
+      sum(data_mat_eco$mat_note==data_mat_eco$Note_maths))
+
+tab<-cbind(v4,v5,v6)
+colnames(tab)<-c("Détérioration","Amélioration","Meme Note")
+rownames(tab)<-c("L1","L2","L3","General")
+
+kable(tab, caption = "Les Notes de physiques ont-elle amélioré la note des participants ?") %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                latex_options = c("striped", "HOLD_position"), 
+                stripe_color = "lightgray") %>% 
+  column_spec(1, bold=T) %>%
+  column_spec(2, bold=T, color="orange") %>%
+  column_spec(3, bold=T, color="lime") %>%
+  row_spec(0, bold=T) %>%
+  row_spec(4, bold = T, color = "white", background = "darkgray")
+```
+
+
+En vert, nous avons le nombre de personnes ayant amélioré leurs notes de mathématiques grâce aux notes de physique et en orange le nombre de personnes ayant diminué leurs notes à cause des notes de physique. Nous pouvons remarquer qu'il y a quasiment autant de détérioration que d'amélioration. Seulement 3 personnes ont eu la même note. \newline
+Au niveau des années de licence, on constate que les L3 ont vu leurs notes augmenter suite aux notes de physique. Du côté des L2 et L1, on remarque une légère détérioration des notes.
+
+
+De plus, nous pouvons observer le nouveau graphique avec les densités que l'on compare avec le graphique vu précédemmment.
+
+```{r, comparaison des densites}
+par(mfrow=c(1,2))
+hist(data_mat_eco$mat_note, freq =FALSE,cex.main=0.8,
+     ylim=c(0,0.15),xlim = c(0,20),
+     las =1,col = "lightblue", border="white" ,xlab = "Notes", ylab="", 
+     main = "Distribution des notes de mathématiques avec \n physique selon l'année de Licence")
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L1"]), 
+      col="blue", lwd =2)
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L2"]), 
+      col="purple", lwd =2)
+lines(density(data_mat_eco$mat_note[data_mat_eco$annee=="L3"]), 
+      col="red", lwd =2)
+segments(mean_L1,-0.07,9.36,0.005,col="blue", lwd=2)
+segments(mean_L2,-0.07,9.58,0.005,col="purple", lwd = 2)
+segments(mean_L3,-0.07,10.82,0.005,col="red", lwd=2)
+
+mean_no_L1 <- mean(data_mat_eco$Note_maths[data_mat_eco$annee=="L1"])
+mean_no_L2 <- mean(data_mat_eco$Note_maths[data_mat_eco$annee=="L2"])
+mean_no_L3 <- mean(data_mat_eco$Note_maths[data_mat_eco$annee=="L3"])
+
+hist(data_mat_eco$Note_maths, freq =FALSE, cex.main=0.8,
+     ylim=c(0,0.15),xlim = c(0,20),
+     las =1,col = "lightblue", border="white" ,xlab = "Notes", ylab="", 
+     main = "Distribution des notes mathématiques sans \n physique selon l'année de Licence")
+lines(density(data_mat_eco$Note_maths[data_mat_eco$annee=="L1"]), 
+      col="blue", lwd =2)
+lines(density(data_mat_eco$Note_maths[data_mat_eco$annee=="L2"]), 
+      col="purple", lwd =2)
+lines(density(data_mat_eco$Note_maths[data_mat_eco$annee=="L3"]), 
+      col="red", lwd =2)
+segments(mean_no_L1,-0.07,9.06,0.005,col="blue", lwd=2)
+segments(mean_no_L2,-0.07,9.46,0.005,col="purple", lwd=2)
+segments(mean_no_L3,-0.07,12.33,0.005,col="red",lwd=2)
+
+legend(x="topright", legend = c("L1","L2","L3", "tous"), 
+       col=plot_colors, lwd=3, cex=0.8, horiz = FALSE)
+```
+
+
+Ce qui est intéressant dans cette comparaison, c'est que l'on remarque que les L1 et L2 ont en moyenne une note de mathématiques plus faible sans les questions de physique. En effet les L1 passent de 9.36 à 9.06 de moyenne et les L2 de 9.58 à 9.46. De leurs côtés, les L3 semblent améliorer significativement leurs notes en mathématiques en passant de 10.82 de moyenne à 12.34 . Cela est sûrement dû à des questions mathématiques dont les réponses seront vues seulement durant la 3ème année d'économie.
+
+À la suite de ces premières comparaisons, grâce à une représentation avec des boites à moustaches, nous pouvons avoir un regard général sur l'impact des questions de physique en fonction de l'année mais également du bac obtenu.
+
+
+```{r, differences notes maths avec et sans physique}
+nophysic<-ggplot(data = data_mat_eco, legend="none") + 
+  aes(x=annee,y=Note_maths, fill=bac) + 
+  geom_boxplot(color="white") +
+  theme_dark() +
+  theme(axis.text = element_text(size=8), 
+        title=element_text(size=10), legend.position="none",
+        legend.title = element_blank()) +
+  labs(subtitle = "Sans physique", x="Année", y="Note")+
+  theme(plot.subtitle = element_text(hjust = 0.5))
+
+physic<-ggplot(data = data_mat_eco) + 
+  aes(x=annee,y=mat_note, fill=bac) + 
+  geom_boxplot(color="white") +
+  theme_dark() +
+  theme(axis.text = element_text(size=8), 
+        title=element_text(size=10), legend.position="none",
+        legend.title = element_blank()) +
+  labs(subtitle = "Avec physique", x="Année", y="") +
+  theme(plot.subtitle = element_text(hjust = 0.5))
+
+grid_arrange_shared_legend(physic,nophysic,
+             layout_matrix = matrix(c(1,2), ncol=2),
+             top= text_grob(
+               "Répartition des notes de mathématiques par année",
+                           size=16))
+```
+
+
+À partir de ce graphique, nous pouvons dire que la baisse de moyenne des L1 et L2, vu aux graphiques précédents, est principalement dû à une baisse de moyenne pour les personnes ayant obtenu un bac ES. Toutefois on remarque que les ES rattrapent le retard à mesure que les années passent.
+On peut également remarquer que la valeur médiane est la même pour les bacs ES et S en L3, pour les questions sans physique. Nous pouvons donc en conclure que les personnes ayant eu un bac ES ont tendance a rattraper les S les moins forts en mathématiques.
+
+
+Nous créons un tableau qui va regrouper les données importantes des boites à moustaches. Nous nous en servirons pour réaliser les tests.
+
+
+```{r, donnees pour les notes avec et sans physique}
+v1<-c(mean(data_mat_eco$mat_note),mean(data_mat_eco$Note_maths))
+v2<-c(var(data_mat_eco$mat_note),var(data_mat_eco$Note_maths))  
+v3<-c(sd(data_mat_eco$mat_note),sd(data_mat_eco$Note_maths))
+mat<-t(cbind(v1,v2,v3))
+colnames(mat)<-c("Sans physique","Avec physique")
+rownames(mat)<-c("Moyenne","Variance","Ecart type")
+
+kable(mat, digits = c(3,3), 
+      caption = "Données pour les notes de mathématiques avec et sans les questions de physiques") %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                bootstrap_options = c("striped", "hold_position"), 
+                stripe_color = "lightgray") %>% 
+  column_spec(1, bold=T) %>%
+  column_spec(2, color="red") %>%
+  column_spec(3, color="blue") %>%
+  row_spec(0, bold=T)
+```
+
+
+Nous pouvons observer que la moyenne est meilleure sans physique qu'avec la physique. Toutefois cet écart est vraiment très faible. De plus, l'écart entre les variances et les écarts-types est beaucoup plus important que pour les moyennes. Ce qui va nous amener à faire des tests pour vérifier si les moyennes sont équivalentes ou non.
+
+```{r, test de variance}
+test_var_mat<-var.test(data_mat_eco$mat_note,data_mat_eco$Note_maths,
+                       alternative="two.sided", conf.level=0.95)
+
+output <- c(test_var_mat$estimate, test_var_mat$conf.int[1],
+            test_var_mat$conf.int[2], test_var_mat$p.value)
+names(output) <- c(names(test_var_mat$estimate),
+                      "Borne inf. de l'IC à 95% de la diff.",
+                      "Borne sup. de l'IC à 95% de la diff.", 
+                      "p-value")
+
+output %>% kable(caption="Résultat du test de variance") %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                latex_options = c("striped", "hold_position"), 
+                stripe_color = "lightgray")
+```
+
+
+La p-value étant inférieure au risque de première espèce de 5%, nous pouvons en conclure que l'hypothèse d'égalité des variances sera rejetée. Les variances semblent donc différentes.
+
+
+```{r, test de moyenne}
+test_moy_mat<-t.test(data_mat_eco$mat_note,data_mat_eco$Note_maths,
+                     alternative="two.sided",conf.level=0.95,
+                     var.equal = FALSE)
+output2 <- c(test_moy_mat$estimate, test_moy_mat$conf.int[1],
+            test_moy_mat$conf.int[2], test_moy_mat$p.value)
+names(output2) <- c(names(test_moy_mat$estimate),
+                      "Borne inf. de l'IC à 95% de la diff.",
+                      "Borne sup. de l'IC à 95% de la diff.", 
+                      "p-value")
+
+
+output2 %>% kable(caption="Résultat du test de moyenne") %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                latex_options = c("striped", "hold_position"),
+                stripe_color = "lightgray")
+```
+
+
+La p-value étant supérieure au risque de première espèce qui est de 5%, nous pouvons en conclure que l'hypothèse d'égalité des moyennes est conservée. Les moyennes semblent donc égales que l'on garde ou que l'on enlève les questions de physique.
+
+
+\pagebreak
+# Étude des réponses aux questions économiques
+
+Pour pouvoir comparer les mathématiques à l'économie, il faut regarder si il y a des spécificitées dans les réponses aux questions portant sur l'économie.
+
+## En fonction de l'année d'étude
+
+Tout d'abord, un premier graphique, qui, comme pour les mathématiques, nous présente les notes d'économie en fonction de l'année d'étude.
+
+```{r, distribution des notes d economie selon la licence}
+hist(data_mat_eco$eco_note, freq =FALSE, ylim=c(0,0.15), 
+     xlim = c(0,20), las =1, col = "lightblue", border="white" ,
+     xlab = "Note", ylab="", 
+     main = "Différence de distribution des notes d'économie \n selon l'année de Licence")
+lines(density(data_mat_eco$eco_note[data_mat_eco$annee=="L1"]), 
+      col="blue", lwd =2)
+lines(density(data_mat_eco$eco_note[data_mat_eco$annee=="L2"]), 
+      col="purple", lwd =2)
+lines(density(data_mat_eco$eco_note[data_mat_eco$annee=="L3"]), 
+      col="red", lwd =2)
+
+legend("topright", 
+       legend=c("L1","L2","L3", "tous"), 
+       col=plot_colors, pt.cex=2, pch=15, bty = "n")
+```
+
+
+On constate directement que les notes d'économie sont plutôt bonnes, ce qui est rassurant du fait que le QCM a été réalisé pour des étudiants en économie.
+Nous pouvons également constater une corrélation positive entre le nombre d'années d'étude et les notes d'économie grâce au graphique dont toutes les données principales sont dans le tableau suivant :
+
+```{r}
+resume_eco<-aggregate(data_mat_eco$eco_note, list(data_mat_eco$annee), 
+          FUN = summary)
+
+resume_eco<- resume_eco[,-1]
+colnames(resume_eco) <- c("Minimum", "Q1","Médiane","Moyenne","Q3","Maximum")
+row.names(resume_eco)<- c("L1","L2","L3")
+
+resume_eco %>% kable(
+  caption= "Tableau résumé des notes d'économie par année",
+  digits=2) %>% 
+  kable_styling(full_width = FALSE, position = "center",
+                latex_options = c("striped", "HOLD_position")) %>%
+  column_spec(1, bold = T) %>%
+  row_spec(0,bold = T)
+```
+
+
+Ce tableau confirme donc bien les intuitions liées à la lecture du graphique.
+
+
+
+## En fonction du bac
+
+Ensuite, nous avons un graphique pour comparer les notes obtenues en économie en fonction du bac.
+
+```{r, distribution des notes d economie selon les bacs}
+ggplot(data = data_mat_eco) +
+  aes(x=eco_note, fill=bac) +
+  geom_histogram(bins = 15, alpha=0.6, col = "white") +
+  labs(title = "Distribution des notes au QCM selon le bac", x = "Note",
+       y = "Effectif")+ 
+  facet_wrap(~bac) +
+  theme(legend.position="none", 
+        plot.title = element_text(hjust = 0.5, size=16))
+```
+
+
+Nous pouvons remarquer que les bac S semblent se situés quasiment tous au-dessus de la moyenne et se regroupent majoritairement dans les notes au-dessus de 14. Du côté du bac ES, les notes semblent plus homogènes. En effet, nous pouvons constater que les notes des bac ES se situent entre 7 et 15, mais il y a également un pic entre 17 et 18.
+
+Pour comparer les notes d'économie selon le bac, on peut créer un graphique à densité.
+
+```{r, Repartition des notes selon le bac}
+ggplot(data = data_mat_eco) +
+        aes(x=eco_note, fill=bac, col=bac) +
+        geom_density(alpha = 0.6) +
+        labs(subtitle = "Notes en économie selon le bac",
+             x = "Note", y = "Densité")+
+        theme_minimal() +  expand_limits(x=c(0,20), y=c(0, 0.13)) +
+  theme(legend.title = element_blank(),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+
+Nous constatons que les notes d'économie sont plus réparties pour les personnes ayant un bac ES que pour les personnes ayant fait un bac S. De plus, les bac S auraient de meilleures notes que les bac ES selon ce graphique, puisque le pic pour les bac S intervient vers 16, tandis que pour les bac ES, le pic intervient entre 12 et 16.
+
+
+
+# Liens et comparaison
+
+## Comparaison des deux premières parties
+
+Pour commencer nous allons comparer les valeurs du tableau des notes de mathématiques et d'économie selon l'année et le bac.
+
+```{r, tableau repartition des notes}
+note_eco.cut <- 
+  cut(data_mat_eco$eco_note, c(0,5,10,15,20),
+      right = FALSE, include.lowest = TRUE)
+
+note_mat.cut <- 
+  cut(data_mat_eco$mat_note, c(0,5,10,15,20),
+      right = FALSE, include.lowest = TRUE)
+
+levels(note_eco.cut) <- c("entre 0 et 5", 
+                             "entre 5 et 10", 
+                             "entre 10 et 15",
+                             "entre 15 et 20")
+
+cbind(table(note_eco.cut,data_mat_eco$annee),
+      table(note_eco.cut,data_mat_eco$bac),
+      table(note_mat.cut,data_mat_eco$annee),
+      table(note_mat.cut,data_mat_eco$bac)) %>% 
+  kable(caption = "Répartition des notes") %>%
+  kable_styling(font_size=12, full_width=FALSE, stripe_color = "lightgray",
+                latex_options = c("striped","hold_position")) %>%
+  add_header_above(c(" ", "Année" = 3, "Bac" = 2,"Année"=3,"Bac"=2), 
+                   bold = TRUE) %>%
+  add_header_above(c(" ","Économie"=5,"Mathématiques"=5),bold=TRUE, 
+                   color="red")%>%
+  column_spec(1, bold=T) %>%
+  row_spec(0,bold=T)
+```
+
+
+Nous pouvons remarquer que les notes globales d'économie sont meilleures que les notes de mathématiques. Cependant, les personnes ayant un bac S semblent avoir de meilleures notes en économie et en mathématiques que les personnes ayant un bac ES. De plus, nous pouvons clairement remarquer que les notes d'économie sont plus élevées que les notes de mathématiques peu importe l'année, ce qui confirme les hypothèses émises dans la deuxième partie.
+
+Nous allons donc faire le test des moyennes pour les notes d'économie et de mathématiques entre les L2 et L3 puisque les L1 ne sont qu'au début de leurs études. On a les résultats suivants :
+
+
+```{r, fonction de test de moyenne}
+moy.test.auto.var<-function(x,y){
+  if (var.test(x~y)$p.value < 0.05){
+    test <- t.test(x~ y, var.equal = FALSE)
+  } else {
+    test <- t.test(x~ y, var.equal = TRUE)
+  }
+   output <- c(test$estimate, test$conf.int[1], test$conf.int[2],
+               test$p.value)
+   names(output) <- c(names(test$estimate),
+                      "Borne inf. de l'IC à 95% de la diff.",
+                      "Borne sup. de l'IC à 95% de la diff.", 
+                      "p-value")
+   return(output)
+}
+
+moy.test.auto.var.df <- function(df, y){
+  sapply(df, moy.test.auto.var, y)
+}
+```
+
+```{r, test notes economie et maths avec physique}
+data_physic <- data_mat_eco %>% filter(annee=="L2" | annee== "L3")
+
+data_physic %>% select(ends_with("note")) %>%
+  moy.test.auto.var.df(data_physic$annee) %>% kable_plus(font_size=12) %>%
+  add_header_above(
+    c("Résultats du test de moyenne des notes de maths et économie"=3),
+    bold = TRUE
+    ) %>%
+  column_spec(1, bold=T) %>%
+  row_spec(0, bold=T)
+```
+
+
+Dans les deux tests, la p-value est strictement supérieure au risque de première espèce, donc nous pouvons en conclure que pour un risque de 5%, les moyennes des L2 et L3 sont les mêmes pour les notes de mathématiques et d'économie.
+
+
+## Économétrie
+
+Nous allons à présent comparer les mathématiques et l'économie grâce à une régression linéaire simple par la méthode des moindres carrés. Ici, nous voulons savoir si le fait d'avoir de meilleures notes sur les questions d'économie, c'est à dire être à un niveau d'année plus élevé (lien montré dans la 2ème partie), permet d'avoir de meilleures notes en mathématiques.
+
+
+```{r, econometrie}
+eco<-data_mat_eco$eco_note
+mat<-data_mat_eco$mat_note
+mat_no <- data_mat_eco$Note_maths
+
+par(mfrow=c(1,2), bty="n", mar=c(5,4,2,2))
+mat_eco<-cbind(eco,mat)
+plot(mat_eco,type="p", ylim=c(0,20), las=1, pch=20, xlim=c(0,20),
+     xlab="Notes d'économie", ylab="Notes de maths",
+     main="Notes de maths avec physique en \n fonction des notes d'économie")
+mylm<-lm(mat~eco,data=data_mat_eco)
+abline(mylm, col="red")
+
+mat_eco3<-cbind(eco,mat_no)
+plot(mat_eco3,type="p", ylim=c(0,20), las=1, pch=20,
+     xlim=c(0,20), xlab="Notes d'économie", ylab="Notes de maths",
+     main="Notes de maths sans physique en \n fonction des notes d'économie")
+mylm3<-lm(mat_no~eco , data=data_mat_eco)
+abline(mylm3, col="green")
+```
+
+
+Voici deux regressions: la première montre le lien entre l'économie et les mathématiques et la seconde montre le lien entre l'économie et les mathématiques mais sans les questions de physique. Ici notre variable expliquée est les mathématiques et notre variable explicative est l'économie.
+On remarque qu'il y a une corrélation positive, mais nous devons vérifier pour les deux régressions si l'hypothèse de ß=0, c'est à dire que l'économie n'a pas un impact significatif sur les mathématiques, peut être admise. \newline
+Pour la première régression (en rouge), le test donne :
+
+
+```{r, econometrie un}
+eco_mat_econometrie<-summary(mylm)
+val_emp<-df(0.05,1,123)
+output_econometrie <- c(eco_mat_econometrie$coefficients,
+                        eco_mat_econometrie$sigma,
+                        eco_mat_econometrie$r.squared,
+                        eco_mat_econometrie$fstatistic,
+                        val_emp)
+
+
+output_econometrie<-output_econometrie[-c(7,8,9)]
+names(output_econometrie) <- c("Ordonnée à l'origine",
+                      "Coefficient directeur",
+                      "Écart-type ordonnée à l'origine", 
+                      "Écart-type coefficient directeur", 
+                      "Valeur critique de l'ordonnée à l'origine",
+                      "Valeur critique coefficient directeur",
+                      "R²",
+                      "Statistique de Fisher", 
+                      "Nombre de paramètres estimés",
+                      "DDL", "Valeur empirique")
+
+output_econometrie %>% kable(
+  caption="Tableau résumant les données de la première régression",
+  digits = 3) %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                latex_options = c("striped", "HOLD_position"), 
+                stripe_color = "lightgray")
+```
+
+
+D'après le tableau, la statistique de Fisher est de 18.53, ce qui est supérieur à la valeur critique de Fisher, donc on rejette l'hypothèse de nullité de ß. Cela signifie que l'économie semble avoir un impact significatif sur les notes de mathématiques. \newline
+Pour la deuxième régression (en vert), on trouve les résultats suivants :
+
+
+```{r, econometrie deux}
+eco_mat_econometrie2<-summary(mylm3)
+
+output_econometrie2 <- c(eco_mat_econometrie2$coefficients,
+                         eco_mat_econometrie2$sigma,
+                         eco_mat_econometrie2$r.squared,
+                         eco_mat_econometrie2$fstatistic,
+                         val_emp)
+
+output_econometrie2<-output_econometrie2[-c(7,8,9)]
+names(output_econometrie2) <- c("Ordonnée à l'origine",
+                                "Coefficient directeur",
+                                "Écart-type ordonnée à l'origine",
+                                "Écart-type coefficient directeur", 
+                                "Valeur critique de l'ordonnée à l'origine",
+                                "Valeur critique coefficient directeur",
+                                "R²",
+                                "Statistique de Fisher", 
+                                "Nombre de paramètres estimés",
+                                "DDL", "Valeur empirique")
+
+output_econometrie2 %>% kable(
+  caption="Tableau résumant les données de la deuxième régression",
+  digits=3) %>%
+  kable_styling(full_width = FALSE, position = "center", 
+                latex_options = c("striped", "HOLD_position"), 
+                stripe_color = "lightgray")
+```
+
+
+Ici, la statistique de Fisher est de 11.35, ce qui est toujours supérieur à la valeur empirique, cela veut dire que l'on rejette l'hypothèse de nullité de ß. L'économie semble avoir un impact significatif sur les notes de mathématiques même sans les questions de physique.
+
+
+# Conclusion
+
+
+Grâce à cette étude, nous avons vu que les notes de mathématiques comme les notes d'économie étaient meilleures lorsque l'étudiant est plus avancé dans ses études. De plus, nous avons montré qu'il y avait une corrélation positive entre les notes d'économie et les notes de mathématiques ce qui signifie qu'une personne ayant une bonne note en économie a généralement une bonne note en mathématiques. Donc, oui, les études d'économie semblent améliorer le niveau de mathématiques général des étudiants. Une autre remarque intérressante est le fait que les étudiants ayant obtenu un bac ES ont tendance à rattraper le niveau de mathématiques des personnes ayant obtenu un bac S.
+
+Toutefois, cette étude se base sur un QCM dont le nombre de répondant est plutot faible, les résultats sont donc à interpréter avec précaution.
