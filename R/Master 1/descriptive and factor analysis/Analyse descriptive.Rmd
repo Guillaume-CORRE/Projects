@@ -1,0 +1,2202 @@
+---
+title: "Performance des étudiants"
+author: "Corre, Feteira, Lenoir"
+date: ""
+lang: fr
+output: 
+ rmdformats::readthedown:
+   gallery: no
+   highlight: tango
+   lightbox: yes
+   self_contained: yes
+editor_options:
+  chunk_output_type
+   
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(kableExtra)
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(dplyr)
+library(tidyverse)
+library(rmdformats)
+library(questionr)
+library(grid)
+library(DT)
+library(lemon)
+library(psych)
+library(highcharter) 
+```
+
+```{r table_function}
+above <- TRUE
+# si above = TRUE on a un header_above
+# on a m = taille pour maths et p = taille pour portugais
+tab_fun <- function(tab, above = FALSE, title = title, m = m, p = p, ...){
+  if(above){
+    tab %>% kable(caption = title) %>%
+      kable_styling(font_size=12, full_width=FALSE, stripe_color = "lightgray",
+                    bootstrap_options = "striped", ...) %>%
+      add_header_above(c(" ", "Maths"=m, "Portugais"=p),
+                       bold=TRUE, color="red")%>%
+      column_spec(1, bold=T) %>%
+      row_spec(0, bold=T)
+  } else {
+    tab %>% kable(caption = title) %>% 
+      kable_styling(font_size=12, full_width=FALSE, 
+                    stripe_color = "lightgray",
+                    bootstrap_options = "striped", ...) %>%
+      column_spec(1, bold=T) %>%
+      row_spec(0, bold=T)
+  }
+}
+```
+
+```{r}
+moy.test.auto.var<-function(x = x, y = y, moy_x = moy_x, moy_y = moy_y){
+  if (var.test(x = x, y = y)$p.value < 0.05){
+    test <- t.test(x = x, y = y, var.equal = FALSE)
+  } else {
+    test <- t.test(x = x, y = y, var.equal = TRUE)
+  }
+   output <- c(test$estimate[1], test$estimate[2], 
+               test$conf.int[1], test$conf.int[2], test$p.value,
+               var.test(x = x, y = y)$p.value)
+   
+   names(output) <- c(moy_x, moy_y,
+                      "Borne inf. de l'IC à 95% de la diff.", 
+                      "Borne sup. de l'IC à 95% de la diff.", "p-value du test de moyenne",
+                      "p-value test de variances")
+   return(output)
+ }
+```
+
+```{r graph_function}
+bar_fun <- function(data = data, x = x, ylab = ylab, xlab = xlab, title = title, color = color, ...){
+  ggplot(data = data, aes(x = x, fill = school)) + coord_flip() +
+    geom_bar(aes(y = (..count..)/sum(..count..)), width=0.2) +
+    scale_y_continuous(labels = scales::percent,limits = c(0,1)) +
+    labs(subtitle = title, x = xlab, y = ylab) + theme_minimal() +
+    theme(legend.title = element_blank(), plot.subtitle = element_text(hjust = 0.5))+
+    scale_fill_manual(values = color)
+}
+
+box_fun <- function(data = data, x = x, ylab = ylab, xlab = xlab, title = title, color = color, ...){
+  ggplot(aes(x = x, y = gradetot, fill = school), data = data) +
+    geom_boxplot() + theme_minimal()+
+    labs(subtitle = title, x = xlab, y = ylab) + 
+    ylim(c(0, 20)) +
+    theme(legend.title = element_blank(), plot.subtitle = element_text(hjust = 0.5))+
+    scale_fill_manual(values = color) 
+}
+```
+
+# Introduction
+
+```{r}
+data_mat<-read.csv("student-mat.csv", sep= ";")
+data_por<-read.csv("student-por.csv", sep= ";")
+
+```
+
+```{r}
+colors1 <- c("#595959","#59CFA3")
+```
+
+```{r}
+
+data_mat$gradetot= (data_mat$G1 + data_mat$G2 + data_mat$G3)/3
+data_por$gradetot= (data_por$G1 + data_por$G2 + data_por$G3)/3
+
+data <- rbind(data_mat,data_por)
+data$matiere<-"math"
+data$matiere[c(396:1044)]<-"portugais"
+
+```
+
+Nous allons travailler sur 2 bases de données composées de données récoltées à la suite d'un questionnaire dans 2 écoles différentes sur 2 différentes matières (les maths et le portugais). La première base de données concerne les mathématiques où nous retrouvons comme variables d'interêts les notes de chaque étudiant et comme variables explicatives les données issues du questionnaire. La seconde base de données concerne le portugais et contient les mêmes variables que la première base de données.
+
+L'axe de travail principal est de déterminer quelles sont les variables qui ont un rôle important dans la performance des étudiants et celles qui ont le moins d'intêret.
+
+Dans un premier temps, notre travail  consiste à nettoyer les bases de données pour enlever les valeurs absurdes puis dans un second temps d'analyser les différentes variables explicatives en fonction de notre variable d'intérêt.
+Enfin nous pourrons tirer des conclusions et en tirer des axes de travail pour nos travaux ultérieurs.
+
+De plus, nous allons dans nos analyses toujours comparer les résultats en fonction des deux écoles et des deux matières (base de données) qui semblent être des axes logiques de comparaison.
+
+Voici notre première base de données (sur la matière mathématiques) : 
+
+```{r}
+datatable(data = data_mat) %>%
+  formatStyle("G1", color = "black",
+              background = styleColorBar(data_mat$G1, "green"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("G2", color = "black",
+              background = styleColorBar(data_mat$G2, "lightblue"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("G3", color = "black",
+              background = styleColorBar(data_mat$G3, "yellow"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("traveltime", color = "black",
+              background = styleColorBar(data_mat$traveltime, "blue"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("studytime", color = "black",
+              background = styleColorBar(data_mat$studytime, "grey"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("age", color = "black",
+              background = styleColorBar(data_mat$age, "purple"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("absences", color = "black",
+              background = styleColorBar(data_mat$absences, "red"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("failures", color = "black",
+              background = styleColorBar(data_mat$failures, "red"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center")
+```
+<br>
+Voici note seconde base de données (sur la matière portugais) :<br>
+
+```{r}
+datatable(data = data_por)%>%
+  formatStyle("G1", color = "black",
+              background = styleColorBar(data_por$G1, "green"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("G2", color = "black",
+              background = styleColorBar(data_por$G2, "lightblue"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("G3", color = "black",
+              background = styleColorBar(data_por$G3, "yellow"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center")%>%
+  formatStyle("traveltime", color = "black",
+              background = styleColorBar(data_por$traveltime, "blue"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("studytime", color = "black",
+              background = styleColorBar(data_por$studytime, "grey"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center")%>%
+  formatStyle("age", color = "black",
+              background = styleColorBar(data_por$age, "purple"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("absences", color = "black",
+              background = styleColorBar(data_por$absences, "red"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center") %>%
+  formatStyle("failures", color = "black",
+              background = styleColorBar(data_por$failures, "red"),
+              backgroundSize = "100% 90%",
+              backgroundRepeat = "no-repeat",
+              backgroundPosition = "center")
+```
+
+À la suite de la lecture de nos bases de données, voici un tableau récapitulant les effectifs dans les deux matières et les effectifs dans les deux écoles : 
+<br>
+
+```{r}
+v1<-c(349,46,395,"38%")
+v2<-c(423,226,649,"62%")
+v3<-c(772,272,1044,"100%")
+v4<-c("74%","26%","100%","")
+tab<-cbind(v1,v2,v3,v4)
+rownames(tab)=c("Gabriel Pereira (GP)","Mousinho da Silveira (MS)","Total","Pourcentage")
+colnames(tab)=c("Mathematiques","Portuguais","Total","Pourcentage")
+
+tab_fun(tab, above = FALSE, title = "Repartition des etudiants")
+
+```
+<br>
+On remarque que nous avons beaucoup plus de données pour la matière portugais et pour l'école Gabriel Pereira.
+
+```{r}
+
+summary1<-sapply(data[1:395,c(31,32,33,34)], is.numeric)
+T1=data[1:395,c(31,32,33,34)][,summary1] 
+f<-function(T1) c(Min=min(T1),Max=max(T1),Moyenne=mean(T1),
+                        Mediane=median(T1),Ecart.type=sd(T1))
+sum1<-setDT(T1)[,sapply(.SD, f)]
+
+summary2<-sapply(data[396:1044,c(31,32,33,34)], is.numeric)
+T2=data[396:1044,c(31,32,33,34)][,summary2] 
+f2<-function(T2) c(Min=min(T2),Max=max(T2),Moyenne=mean(T2),
+                        Mediane=median(T2),Ecart.type=sd(T2))
+sum2<-setDT(T2)[,sapply(.SD, f2)]
+
+Note<-round(cbind(sum1,sum2),3)
+
+
+tab_fun(Note,above = TRUE,m=4,p=4,title = "Sommaire des notes et moyennes selon les matières")
+```
+En observant, les trois notes et la moyenne de ces notes (gradetot), on constate que: 
+
+* Les notes minimales et maximales de maths sont équivalentes à celles de portugais 
+
+* La médiane de la moyenne et la moyenne de la moyenne sont plus élevées pour les notes de portugais donc les notes de portugais sont globalement meilleures
+
+* La moyenne des moyennes et la médiane des moyennes pour les maths sont presques équivalentes : le niveau des meilleurs ne l'emporte pas sur le niveau des plus faibles
+
+* On observe les mêmes choses pour le portugais mais l'écart-type est bien plus faible que pour les maths : il y a une moins grande disparité.
+
+
+# Nettoyage base de données et hypothèses  
+
+Dans cette partie, l'objectif est d'avoir un aperçu plus clair de nos bases de données sans valeurs abérrantes ou de valeurs non renseignées. 
+<br>
+```{r}
+mat_NA <- sum(!is.na(data_mat)==FALSE)
+por_NA <- sum(!is.na(data_por)==FALSE)
+tot_NA <- cbind(mat_NA, por_NA)
+colnames(tot_NA) <- c("Maths", "Portugais")
+rownames(tot_NA) <- "Valeurs manquantes"
+tab_fun(tot_NA, above = FALSE, title = "Nombre de valeurs manquantes")
+```
+<br> 
+Il n'y a aucune donnée manquante dans les bases de données.
+
+À la lecture de notre base de données, nous nous sommes rendu compte d'un problème majeur lié à l'âge. En effet, nous étudions les données sur des étudiants du second cycle (entre 15 et 18 ans) et donc il est très peu probable qu'un étudiant de 15 ans ayant redoublé 3 fois puisse être au second cycle. Nous avons donc créé une fonction qui supprime tous les individus n'ayant pas l'âge requis, c'est-à-dire plus de 20 ans ou moins de 15 ans lorsque l'on soustrait le nombre de redoublements à l'âge de l'étudiant.
+
+```{r clean_data}
+## On vérifie que les données peuvent être possible au niveau des ages, sinon on supprime
+clean <- function(mon_df = mon_df){
+  i = 1 # on initie i
+  mon_vec <- c() # on crée le vecteur qui va récupérer les lignes a supprimer
+  age <- select(mon_df, "age") # on choisit la variable age du df
+  failures <- select(mon_df, "failures") # on choisit la variable failures du df
+  for (i in 1:nrow(mon_df)) { # boucle pour recuperer les lignes du df a supprimer
+    if (age[i,] - failures[i, ] < 15) {
+      mon_vec <- append(mon_vec, i)
+    }
+  if (age[i,] - failures[i, ] > 20) {
+      mon_vec <- append(mon_vec, i)
+    }  
+  }
+  mon_df[-mon_vec,] # on supprime les lignes du df
+}
+
+data_mat <- clean(data_mat)
+data_por <- clean(data_por)
+
+data <- rbind(data_mat,data_por)
+data$matiere<-"math"
+data$matiere[c(396:1009)]<-"portugais"
+```
+<br> Cela enlève `r 395-374` individus dans la base de données sur les mathématiques et 14 individus dans la base de données sur le portugais.<br>
+
+En ce qui concerne les hypothèses faites sur nos données:
+
+* Nous avons décidé de prendre les 3 notes pour en créer une moyenne générale. Cette moyenne est d'après nous la moyenne du trimestre avec pour chaque grade la note à chaque contrôle.
+
+* Les individus sont tous différents entre les deux bases de données.
+
+* On a n > 30 lors de nos tests, nous n'avons donc pas besoin de faire un test de normalité car les échantillons sont assez grand pour être approché par une loi normale d'après le théorème central limite.
+
+
+```{r,fig.height=6,fig.width=10}
+pairs.panels(data_mat[,c(31,32,33)])
+```
+<br> Très forte corrélation entre les 3 grades. Surtout entre G2 et G3. Ceci peut confirmer notre hypothèse de faire la moyenne des trois notes comme variable d'intêret. 
+
+# Analyse des variables
+
+## Renseignements généraux
+
+### Sexe
+```{r}
+#Dans le cours de maths nous avons 187 garÃ§ons pour 208 filles.
+
+
+#Dans le cours de portugais, nous avons 266 garçons pour 383 filles.
+
+v5<-c(sum(data_mat$sex=="M" & data_mat$school=="GP"),sum(data_mat$sex=="M" & data_mat$school=="MS"),sum(data_mat$sex=="M"))
+v6<-c(sum(data_mat$sex=="F" & data_mat$school=="GP"),sum(data_mat$sex=="F" & data_mat$school=="MS"),sum(data_mat$sex=="F"))
+v7<-c(sum(data_por$sex=="M" & data_por$school=="GP"),sum(data_por$sex=="M" & data_por$school=="MS"),sum(data_por$sex=="M"))
+v8<-c(sum(data_por$sex=="F" & data_por$school=="GP"),sum(data_por$sex=="F" & data_por$school=="MS"),sum(data_por$sex=="F"))
+tab8<-cbind(v5,v6,v7,v8)
+rownames(tab8)=c("Grabriel Pereira (GP)","Mousinho da Silveira (MS)","Total")
+colnames(tab8)=c("Hommes","Femmes","Hommes","Femmes")
+
+tab_fun(tab8, above = TRUE, title = "Repartition des etudiants en fonction du sexe et de l'école",
+        p = 2, m = 2)
+```
+<br>
+Ce tableau regroupe les effectifs en fonction du sexe, de l'école et de la matière.
+On remarque que pour les mathématiques le nombre de filles est un peu supérieur mais que pour le portugais nous avons beaucoup plus de filles.<br>
+
+Maintenant observons les moyennes en fonction du sexe ainsi que de l'école :
+<br>
+```{r}
+sex_mat<-ggplot(data_mat, aes(x=data_mat$sex,y=data_mat$gradetot,fill=school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Maths",x="Genre",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)
+
+sex_por<-ggplot(data_por, aes(x=data_por$sex,y=data_por$gradetot,fill=school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Portugais",x="Genre",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)
+
+grid_arrange_shared_legend(sex_mat, sex_por, nrow=1,ncol=2,top="Moyenne des notes selon le genre et l'ecole")
+
+```
+<br>
+On peut voir que pour les maths, dans l'école Gabriel Pereira les garcons semblent légèrement meilleurs que les filles et dans l'école Mousinho Da Silveira les notes sont équivalentes.
+Pour le portugais, les notes sont plutot équivalentes entre les sexes mais les notes pour l'école Gabriel Pereira sont plus élevées que pour l'école Mousinho Da Silveira peu importe le sexe.<br>
+
+Nous allons maintenant tester les moyennes en maths et en portugais pour savoir si l'on peut considérer les moyennes comme différentes et donc que le fait d'être un garcon ou une fille joue un rôle important dans les notes des étudiants. <br>
+```{r}
+test_mat_sex <- moy.test.auto.var(x = data_mat$gradetot[data_mat$sex == "F"],
+                                  y = data_mat$gradetot[data_mat$sex == "M"],
+                                  moy_x = "Moyenne des filles",
+                                  moy_y = "Moyenne des garcons")
+
+test_por_sex <- moy.test.auto.var(x = data_por$gradetot[data_por$sex == "F"],
+                                  y = data_por$gradetot[data_por$sex == "M"],
+                                  moy_x = "Moyenne des filles",
+                                  moy_y = "Moyenne des garcons")
+
+test_sex <- cbind(test_mat_sex, test_por_sex)
+colnames(test_sex) <- c("Maths", "Portugais")
+
+tab_fun(test_sex, title="Test de moyenne sur la variable sexe", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Pour chaque matière, le test de variances renvoit une égalité de variances dû à une p-value > 0.05.
+Pour les tests de moyennes, en maths, on obtient une p-value > 0.05, donc on ne peut pas conclure sur une moyenne qui diffère en fonction du sexe et en portugais la p-value est < 0.05 donc le sexe peut jouer un rôle dans les résultats.
+En conclusion, la variable sexe ne semble pas avoir un impact majeur dans les notes obtenues par les étudiants.
+<br>
+
+### Age
+
+```{r}
+G3_mat <- cut(data_mat$gradetot, c(0,5,10,15,20), 
+              right = FALSE, include.lowest = TRUE)
+
+G3_por <- cut(data_por$gradetot, c(0,5,10,15,20), 
+              right = FALSE, include.lowest = TRUE)
+
+levels(G3_mat) <- c("entre 0 et 5", "entre 5 et 10", "entre 10 et 15", "entre 15 et 20")
+notes_res_G3 <- cbind(table(G3_mat, data_mat$age), table(G3_por, data_por$age))
+
+tab_fun(notes_res_G3, title = "Répartition de la moyenne selon l'age", above =TRUE,
+        m = 8, p = 8)
+```
+<br>
+On remarque que pour chacune des matières les notes les plus élevées sont pour les étudiants ayant entre 15 et 18 ans. 
+Les élèves agés n'ont jamais plus de 15. La plupart des élèves pour les autres âges ont entre 10 et 15 sur 20.
+
+
+```{r}
+graph_age_maths<-ggplot(data_mat, aes(x=data_mat$age,fill=data_mat$school))+
+  geom_bar(position = position_dodge())+
+  labs(title="Data Maths",fill="Ecole",x="Age",y="Nombres")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="white")+
+  scale_fill_manual(values = colors1)
+
+
+graphe_age_por<-ggplot(data_por, aes(x=data_por$age,fill=data_por$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Portugais",fill="Ecole",x="Age",y="Nombres")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)
+
+grid_arrange_shared_legend(graph_age_maths,graphe_age_por,nrow=1,ncol=2, top="Proportion des ages en fonction de l'ecole")
+  
+```
+<br>
+
+On a une forte concentration d'étudiants entre 15 et 19 ans pour les deux matières, ce qui est normal car nous sommes dans le second cycle. Nous avons peu d'étudiant de 20 ans ou plus et on peut penser que ce sont des redoublants pour la plupart.
+<br>
+
+Il semblerait donc que le fait d'être agé baisse la note moyenne des étudiants, toutefois la répartition pour les autres ages semble normale et donc l'âge ne joue pas un rôle préponderant dans la moyenne de l'élève.<br>
+
+### Address
+
+```{r}
+data_mat$address <- as.factor(data_mat$address)
+data_por$address <- as.factor(data_por$address)
+
+address_tab <-cbind(table(data_mat$address, data_mat$school), 
+                  table(data_por$address, data_por$school))
+
+tab_fun(address_tab, above = TRUE, m = 2, p =2,
+        title = "Zone d'habitation selon l'école et la matière.")
+```
+
+
+```{r}
+graph_adress_mat<-ggplot(data_mat, aes(x=data_mat$address,fill=data_mat$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Maths",fill="Ecoles",x="R(Campagne),U(Ville)",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=0.9, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+  
+
+graph_adress_por<-ggplot(data_por, aes(x=data_por$address,fill=data_por$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Portugais",fill="Ecoles",x="R(Campagne),U(Ville)",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=0.9, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+
+graph_adress_mat2<-ggplot(data_mat, aes(x=data_mat$address,y=data_mat$gradetot,fill=data_mat$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Maths",x="R(Campagne),U(Ville)",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)+theme_minimal()
+
+graph_adress_por2<-ggplot(data_por, aes(x=data_por$address,y=data_por$gradetot,fill=data_por$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Portugais",x="R(Campagne),U(Ville)",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)+theme_minimal()
+
+grid_arrange_shared_legend(graph_adress_mat,graph_adress_por,graph_adress_mat2,graph_adress_por2,nrow=2,ncol=2, top="Proportion des personnes venant de la ville/campagne")
+
+```
+<br>
+Ici, on remarque que pour les deux matières, nous avons plus de personnes venant de la ville que de la campagne, mais dans l'école Mousinho Da Silveira il y a plus de personnes venant de la campagne que de la ville pour les deux matières ce qui veut surement dire que cette école se situe loin d'une grande ville au contraire de l'école Gabriel Pereira.
+En ce qui concerne les résultats, les notes semblent similaires entre les écoles mais la moyenne pour les personnes venant de la ville est meilleure que pour ceux venant de la campagne.<br>
+
+Nous allons maintenant tester les moyennes en maths et en portugais pour savoir si l'on peut considérer les moyennes comme différentes et donc que le fait de provenir de la ville ou de la campagne joue un rôle dans les notes des étudiants.<br>
+
+```{r}
+test_mat_address <- moy.test.auto.var(x = data_mat$gradetot[data_mat$address == "R"],
+                                       y = data_mat$gradetot[data_mat$address == "U"],
+                                       moy_x = "Moyenne des etudiantS à la campagne",
+                                       moy_y = "Moyenne des etudiant en ville")
+
+test_por_address <- moy.test.auto.var(x = data_por$gradetot[data_por$address == "R"],
+                                       y =data_por$gradetot[data_por$address == "U"],
+                                       moy_x = "Moyenne des etudiants à la campagne",
+                                       moy_y = "Moyenne des etudiants en ville.")
+
+test_address <- cbind(test_mat_address, test_por_address)
+colnames(test_address) <- c("Maths", "Portugais")
+
+tab_fun(test_address, title="Test de moyenne sur la variable Address", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Les résultats des tests de moyennes nous présentent une p-value < 0.05 pour chaque variable, il semble donc que les moyennes soient significativement différentes et que cela n'est pas dû aux fluctuations d'échantillons. <br>
+Il en résulte donc que la variable adress joue un rôle dans la moyenne des étudiants, cette variable peut donc expliquer la performance des étudiants.<br>
+
+### Health
+<br>
+```{r}
+data_mat$health <- as.factor(data_mat$health)
+data_por$health <- as.factor(data_por$health)
+
+health_tab <-cbind(table(data_mat$health, data_mat$school), 
+                  table(data_por$health, data_por$school))
+nbr<-c(1,2,3,4,5)
+health_tab<-cbind(nbr,health_tab)
+colnames(health_tab)<-c(" ","GP","MS","GP","MS")
+tab_fun(health_tab, above = TRUE, m = 2, p =2,
+        title = "Statut de santé selon la base de données")
+
+```
+<br>
+On remarque qu'une grande partie des élèves ont un bon état de santé, ce qui représente `r  round((sum(data$health==5) /1009)*100,2)`% de l'effectif total. Les élèves qui ont un mauvais état de santé représente quant à eux  `r  round((sum(data$health==1) /1009)*100,2)`%
+
+<br>
+```{r}
+
+box_health_math<-ggplot(data=data_mat)+aes(x=health, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Math",y="Moyenne",x="Etat de sante")+
+  facet_wrap(~school)
+    
+box_health_por<-ggplot(data=data_por)+aes(x=health, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Portugais",y="Moyenne",x="Etat de sante")+
+  facet_wrap(~school)
+
+ghealth<-ggarrange(box_health_math,box_health_por)
+annotate_figure(ghealth,top=text_grob("Representation des étudiants selon leur état de santé"))
+```
+<br>
+
+* Pour les élèves qui ont passé les maths, on ne voit pas de grande différence sur la moyenne quelque soit l'école ou l'état de santé. On observe une plus grande disparité de notes pour les élèves de Mousinho da Silveira (MS) que ceux de Grabriel Pereira (GP) : on peut le voir grâce à l'écart interquartile
+
+* Pour ceux qui ont effectué les tests de Portugais, à état de santé identique, les élèves appartenant à l'école GP ont une meilleure moyenne de 1,5 à 2 points au-dessus de ceux venant de MS
+
+## Famille
+
+### Famsize (Taille de la famille)
+
+```{r}
+data_mat$famsize <- as.factor(data_mat$famsize)
+data_por$famsize <- as.factor(data_por$famsize)
+
+famsize_tab <-cbind(table(data_mat$famsize, data_mat$school), 
+                  table(data_por$famsize, data_por$school))
+
+tab_fun(famsize_tab, above = TRUE, m = 2, p =2,
+        title = "Taille de la famille selon l'école et la matière.")
+```
+
+```{r}
+graph_fam_mat<-ggplot(data_mat, aes(x=data_mat$famsize,fill=data_mat$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Maths",fill="Ecoles",x="3+,0 a 3",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=0.9, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_fam_por<-ggplot(data_por, aes(x=data_por$famsize,fill=data_por$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Potugais",fill="Ecoles",x="3+,0 a 3",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=0.9, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+
+graph_fam_mat2<-ggplot(data_mat, aes(x=data_mat$famsize,y=data_mat$gradetot,fill=data_mat$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Maths",x="3+,0 a 3",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_fam_por2<-ggplot(data_por, aes(x=data_por$famsize,y=data_por$gradetot,fill=data_por$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Portugais",x="3+,0 a 3",y="Moyenne",fill="Ecole")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+grid_arrange_shared_legend(graph_fam_mat,graph_fam_por,graph_fam_mat2,graph_fam_por2,nrow=2,ncol=2, top="Proportion des personnes et representation des notes en fonction de la taille de la famille")  
+
+```
+<br>
+Sur les deux premiers graphiques, on peut constater que les étudiants proviennent en majorité d'une famile de plus de 3 personnes pour les deux écoles et deux matières.
+Concernant les résultats, les notes pour l'école GP sont meilleures que pour l'école MS. Mais que les moyennes sont proches entre le fait de provenir d'une grande famille ou non.<br>
+
+
+```{r}
+test_mat_famsize <- moy.test.auto.var(x = data_mat$gradetot[data_mat$famsize == "GT3"],
+                                      y = data_mat$gradetot[data_mat$famsize == "LE3"],
+                                      moy_x = "Moyenne GT3",
+                                      moy_y = "Moyenne LE3")
+
+test_por_famsize <- moy.test.auto.var(x = data_por$gradetot[data_por$famsize == "GT3"],
+                                      y =data_por$gradetot[data_por$famsize == "LE3"],
+                                      moy_x = "Moyenne GT3",
+                                      moy_y = "Moyenne LE3")
+
+test_famsize <- cbind(test_mat_famsize, test_por_famsize)
+colnames(test_famsize) <- c("Maths", "Portugais")
+
+tab_fun(test_famsize, title="Test de moyenne sur la variable famsize", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+
+<br>
+Les résultats des tests de moyenne indiquent une p-value > 0.05 pour chaque matière, il semble donc que les moyennes ne soient pas significativement différentes. <br> 
+Il en résulte donc que la variable famsize ne joue pas un rôle important dans la moyenne des étudiants, cette variable ne peut donc pas vraiment expliquer la performance des étudiants.<br>
+
+
+### Pstatut (Parents séparés ou non)
+
+```{r}
+data_mat$Pstatus <- as.factor(data_mat$Pstatus)
+data_por$Pstatus <- as.factor(data_por$Pstatus)
+
+Pstatus_tab <-cbind(table(data_mat$Pstatus, data_mat$school), 
+                    table(data_por$Pstatus, data_por$school))
+
+tab_fun(Pstatus_tab, above = TRUE, m = 2, p =2,
+        title = "Situation des parents selon l'école et la matière.")
+```
+
+```{r}
+graph_pstatut_mat<-ggplot(data_mat, aes(x=data_mat$Pstatus,fill=data_mat$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Maths",fill="Ecoles",x="Separes(A), ensemble(T)",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_pstatut_por<-ggplot(data_por, aes(x=data_por$Pstatus,fill=data_por$school))+
+  geom_bar(position=position_dodge())+
+  labs(title="Data Potugais",fill="Ecoles",x="Separes(A), ensemble(T)",y="Nombre")+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+
+graph_pstatus_mat2<-ggplot(data_mat, aes(x=data_mat$Pstatus,y=data_mat$gradetot,fill=data_mat$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Maths",x="Separes(A), ensemble(T)",y="Note")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_pstatus_por2<-ggplot(data_por, aes(x=data_por$Pstatus,y=data_por$gradetot,fill=data_por$school))+
+  geom_boxplot(width = T)+
+  labs(title="Data Portugais",x="Separes(A), ensembles(T)",y="Note")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+grid_arrange_shared_legend(graph_pstatut_mat,graph_pstatut_por,graph_pstatus_mat2,graph_pstatus_por2,nrow=2,ncol=2,top="Proportion des personnes et représentation des notes en fonction de la situation des parents")
+```
+<br>
+Dans les deux premiers graphiques, on remarque qu'il y a plus d'étudiants dont les parents ne sont pas séparés pour les deux écoles et les deux matières. <br>
+Pour les maths les notes semblent similaires entre les écoles et les deux facteurs. <br>
+Cependant pour le portugais on remarque que les notes pour l'école GP sont plus élevées mais le fait que les parents soient séparés ou non ne semblent pas affecter les notes.<br>
+
+
+```{r}
+test_mat_Pstatus <- moy.test.auto.var(x = data_mat$gradetot[data_mat$Pstatus == "A"],
+                                      y = data_mat$gradetot[data_mat$Pstatus == "T"],
+                                      moy_x = "Moyenne pour les parents separes",
+                                      moy_y = "Moyenne pour les parents ensembles")
+
+test_por_Pstatus <- moy.test.auto.var(x = data_por$gradetot[data_por$Pstatus == "A"],
+                                      y =data_por$gradetot[data_por$Pstatus == "T"],
+                                      moy_x = "Moyenne des parents seprares",
+                                      moy_y = "Moyenne des parents ensembles")
+
+test_Pstatus <- cbind(test_mat_Pstatus, test_por_Pstatus)
+colnames(test_Pstatus) <- c("Maths", "Portugais")
+
+tab_fun(test_Pstatus, title="Test de moyenne sur la variable Pstatus", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+
+<br>
+Les résultats des tests de moyenne nous présentent une p-value > 0.05 pour chaque variable, il semble donc que les moyennes ne soient pas significativement différentes. <br>
+Il en résulte donc que la variable famsize ne joue pas un rôle important dans la moyenne des étudiants, cette variable ne peut donc pas vraiment expliquer la performance des étudiants. <br>
+
+
+### Medu (Niveau d'éducation de la mère)
+
+```{r}
+data_mat$Medu <- as.factor(data_mat$Medu)
+data_por$Medu <- as.factor(data_por$Medu)
+
+Medu_tab <-cbind(table(data_mat$Medu, data_mat$school), 
+                 table(data_por$Medu, data_por$school))
+
+tab_fun(Medu_tab, above = TRUE, m = 2, p =2,
+        title = "Niveau d'éducation de la mère selon l'école et la matière")
+```
+
+```{r}
+graph_medu_mat<-ggplot(data_mat, aes(x=data_mat$Medu, fill=data_mat$school))+
+  geom_bar(position = position_dodge())+
+  labs(title="Data Maths",x="Niveau d'education",y="Nombres",fill="Ecole")+
+    geom_text(x=1,y=8,label="12.5",col="blue",cex=3.5)+
+    geom_text(x=1.8,y=42,label="9.6",col="blue",cex=3.5)+
+    geom_text(x=2.2,y=22,label="9.0",col="blue",cex=3.5)+
+    geom_text(x=2.8,y=96,label="10.5",col="blue",cex=3.5)+
+    geom_text(x=3.2,y=12,label="8.9",col="blue",cex=3.5)+
+    geom_text(x=3.8,y=85,label="10.85",col="blue",cex=3.5)+
+    geom_text(x=4.2,y=16,label="11.3",col="blue",cex=3.5)+
+    geom_text(x=4.8,y=120,label="11.9",col="blue",cex=3.5)+
+    geom_text(x=5.2,y=16,label="12.1",col="blue",cex=3.5)+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_medu_por<-ggplot(data_por, aes(x=data_por$Medu, fill=data_por$school))+
+  geom_bar(position = position_dodge())+
+  labs(title="Data Portugais",x="Niveau d'education",y="Nombres",fill="Ecole")+
+  geom_text(x=0.72,y=8,label="11.9",col="blue",cex=3.5)+
+  geom_text(x=1.23,y=8,label="10.5",col="blue",cex=3.5)+
+  geom_text(x=1.8,y=60,label="11.7",col="blue",cex=3.5)+
+  geom_text(x=2.2,y=86,label="10.0",col="blue",cex=3.5)+
+  geom_text(x=2.8,y=128,label="11.8",col="blue",cex=3.5)+
+  geom_text(x=3.2,y=67,label="10.55",col="blue",cex=3.5)+
+  geom_text(x=3.8,y=104,label="12.3",col="blue",cex=3.5)+
+  geom_text(x=4.2,y=40,label="10.2",col="blue",cex=3.5)+
+  geom_text(x=4.8,y=138,label="13.0",col="blue",cex=3.5)+
+  geom_text(x=5.2,y=44,label="12.0",col="blue",cex=3.5)+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+grid_arrange_shared_legend(graph_medu_mat,graph_medu_por,ncol=2,
+                           top="Proportion + moyenne des notes en fonction du niveau d'éducation de la mère (en bleu)")
+```
+<br>Il semble que pour chacune des deux matières les notes de l'étudiant sont meilleures avec le niveau d'éducation de la mère sauf pour le niveau d'éducation 0 mais cela peut s'expliquer par le très faible nombre d'observations. L'effet se remarque surtout pour le niveau 4 où les moyennes augmentent beaucoup. Il y a donc une corrélation positive entre le niveau d'éducation de la mère et la note obtenue. <br>
+Cette variable est donc intéressante pour étudier la performance des étudiants.<br>
+
+### Fedu (Niveau d'éducation du père)
+
+```{r}
+data_mat$Fedu <- as.factor(data_mat$Fedu)
+data_por$Fedu <- as.factor(data_por$Fedu)
+
+Fedu_tab <-cbind(table(data_mat$Fedu, data_mat$school), 
+                 table(data_por$Fedu, data_por$school))
+
+tab_fun(Fedu_tab, above = TRUE, m = 2, p =2,
+        title = "Niveau d'éducation du père selon l'école et la matière")
+```
+
+```{r}
+
+graph_fedu_mat<-ggplot(data_mat, aes(x=data_mat$Fedu, fill=data_mat$school))+
+  geom_bar(position = position_dodge())+
+  labs(title="Data Maths",x="Niveau d'éducation",y="Nombres",fill="Ecole")+
+  geom_text(x=1,y=6,label="12.7",col="blue",cex=3.5)+
+  geom_text(x=1.8,y=64,label="9.9",col="blue",cex=3.5)+
+  geom_text(x=2.2,y=20,label="8.8",col="blue",cex=3.5)+
+  geom_text(x=2.8,y=100,label="11.0",col="blue",cex=3.5)+
+  geom_text(x=3.2,y=17,label="10.2",col="blue",cex=3.5)+
+  geom_text(x=3.8,y=92,label="11.0",col="blue",cex=3.5)+
+  geom_text(x=4.2,y=15,label="10.2",col="blue",cex=3.5)+
+  geom_text(x=4.8,y=88,label="11.8",col="blue",cex=3.5)+
+  geom_text(x=5.2,y=14,label="12.7",col="blue",cex=3.5)+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.6), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+
+graph_fedu_por<-ggplot(data_por, aes(x=data_por$Fedu, fill=data_por$school))+
+  geom_bar(position = position_dodge())+
+  labs(title="Data Portugais",x="Niveau d'education",y="Nombres",fill="Ecole")+
+  geom_text(x=0.72,y=8,label="12.6",col="blue",cex=3.5)+
+  geom_text(x=1.23,y=9,label="11.1",col="blue",cex=3.5)+
+  geom_text(x=1.8,y=94,label="11.7",col="blue",cex=3.5)+
+  geom_text(x=2.2,y=83,label="9.7",col="blue",cex=3.5)+
+  geom_text(x=2.8,y=127,label="12.3",col="blue",cex=3.5)+
+  geom_text(x=3.2,y=84,label="10.5",col="blue",cex=3.5)+
+  geom_text(x=3.8,y=104,label="12.3",col="blue",cex=3.5)+
+  geom_text(x=4.2,y=37,label="11.2",col="blue",cex=3.5)+
+  geom_text(x=4.8,y=105,label="12.7",col="blue",cex=3.5)+
+  geom_text(x=5.2,y=32,label="12.2",col="blue",cex=3.5)+
+  geom_text(aes(label = ..count..), stat = "count", 
+            position = position_dodge(0.8), vjust=1, col="White")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+
+grid_arrange_shared_legend(graph_fedu_mat,graph_fedu_por,ncol=2,top="Proportion en fonction du niveau d'éducation du père + moyenne (en bleu)")
+```
+<br>Ici aussi, le niveau de l'étudiant s'améliore avec le niveau d'éducation du père. Sauf pour le niveau 0 mais peut être dû au faible nombre de personnes dans cette catégorie. <br>
+Il semble donc y avoir une corrélation et comme pour la variable Medu pour le niveau 4 d'éducation les moyennes augmentent plus fortement. <br>
+Cette variable est donc également intéressante pour étudier les performances des étudiants.<br>
+
+
+### Mjob (Secteur de travail de la mère)
+
+```{r}
+tab2<- round(lprop(table(data_mat$school, data_mat$Mjob)),2)
+tab3<- round(lprop(table(data_por$school, data_por$Mjob)),2)
+
+tab_fun(cbind(tab2,tab3), above = TRUE, m = 6, p = 6, 
+        title = "Répartition des secteurs de travail de la mère en fonction de l'école (%)")
+```
+<br>
+On remarque que la plupart des étudiants on une mère qui travaille dans un secteur catégorisé "autre" et en deuxième position se trouve les services publics. En ce qui concerne l'école Gabriel Pereira, il y a moins de mères travaillant à la maison que dans l'école Mousinho Da Silveira.
+<br>
+```{r}
+secteurs<-c("at_home","at_home","health","health","other","other","services","services","teacher","teacher")
+ecole<-rep(c("GP","MS"),5)
+
+moyMjob_mat<-c(mean(data_mat$gradetot[data_mat$Mjob=="at_home"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="at_home"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="health"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="health"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="other"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="other"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="services"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="services"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="teacher"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Mjob=="teacher"&data_mat$school=="MS"]))
+data_Mjob_mat<-data.frame(secteurs,ecole,moyMjob_mat)
+data_Mjob_mat$moyMjob_mat<-round(data_Mjob_mat$moyMjob_mat,2)
+```
+
+```{r}
+moyMjob_por<-c(mean(data_por$gradetot[data_por$Mjob=="at_home"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Mjob=="at_home"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Mjob=="health"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Mjob=="health"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Mjob=="other"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Mjob=="other"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Mjob=="services"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Mjob=="services"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Mjob=="teacher"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Mjob=="teacher"&data_por$school=="MS"]))
+data_Mjob_por<-data.frame(secteurs,ecole,moyMjob_por)
+data_Mjob_por$moyMjob_por<-round(data_Mjob_por$moyMjob_por,2)
+```
+
+```{r}
+bar_Mjob_mat<-ggplot(data=data_Mjob_mat)+aes(x=secteurs,y=moyMjob_mat,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyMjob_mat), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Secteur de travail de la mère" ,y="Moyenne",title = "Data Maths")
+  
+
+bar_Mjob_por<-ggplot(data=data_Mjob_por)+aes(x=secteurs,y=moyMjob_por,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyMjob_por), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Secteur de travail de la mere" ,y="Moyenne",title = " Data Portugais")
+
+grid_arrange_shared_legend(bar_Mjob_mat,bar_Mjob_por,nrow=1,ncol=2,top="Moyenne en fonction du secteur de travail de la mère")
+```
+<br>
+On remarque grâce à ces deux graphiques que, en maths les moyennes sont les plus élevées pour les élèves dont la mère travaille dans le secteur de la santé. 
+En portugais cela semble pareille pour l'école Gabriel Pereira mais pour l'école Mousinho Da Silveira, ce sont les étudiants avec des mères professeurs qui ont la meilleure moyenne.
+Toutefois on voit que les différences de moyennes ne sont pas énormes, on peut donc en conclure que le secteur de travail de la mère joue un rôle mais faible.<br>
+
+
+### Fjob (Secteur de travail du père)
+
+```{r}
+tab4<- round(lprop(table(data_mat$school, data_mat$Fjob)),2)
+tab5<- round(lprop(table(data_por$school, data_por$Fjob)),2)
+
+tab_fun(cbind(tab4,tab5), above = TRUE, m = 6, p = 6, 
+        title = "Répartition des secteurs de travail du père en fonction de l'école (%)")
+
+```
+<br>Comme pour la mère, la plupart des étudiants ont un père qui travaille dans la catégorie "autre" et dans les services publics. <br>
+Il y a également 0 étudiant dont le père travaille dans le secteur de la santé pour la matière maths.<br>
+
+```{r}
+moyFjob_mat<-c(mean(data_mat$gradetot[data_mat$Fjob=="at_home"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="at_home"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="health"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="health"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="other"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="other"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="services"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="services"&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="teacher"&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$Fjob=="teacher"&data_mat$school=="MS"]))
+data_Fjob_mat<-data.frame(secteurs,ecole,moyFjob_mat)
+data_Fjob_mat$moyFjob_mat<-round(data_Fjob_mat$moyFjob_mat,2)
+```
+
+```{r}
+moyFjob_por<-c(mean(data_por$gradetot[data_por$Fjob=="at_home"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Fjob=="at_home"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Fjob=="health"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Fjob=="health"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Fjob=="other"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Fjob=="other"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Fjob=="services"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Fjob=="services"&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$Fjob=="teacher"&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$Fjob=="teacher"&data_por$school=="MS"]))
+data_Fjob_por<-data.frame(secteurs,ecole,moyFjob_por)
+data_Fjob_por$moyFjob_por<-round(data_Fjob_por$moyFjob_por,2)
+```
+
+```{r}
+bar_Fjob_mat<-ggplot(data=data_Fjob_mat)+aes(x=secteurs,y=moyFjob_mat,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyFjob_mat), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Secteur de travail du père" ,y="Moyenne",title = " Data Maths")
+
+bar_Fjob_por<-ggplot(data=data_Fjob_por)+aes(x=secteurs,y=moyFjob_por,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyFjob_por), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Secteur de travail du père" ,y="Moyenne",title = " Data Portugais")
+
+grid_arrange_shared_legend(bar_Fjob_mat,bar_Fjob_por,nrow=1,ncol=2,top="Moyenne en fonction du secteur de travail du père")
+```
+<br>On remarque que pour les deux matières, les meilleures moyennes sont pour les étudiants dont le père est professeur. Toutes les autres moyennes sont plûtot similaires. <br>
+Ce qui serait intéressant ici, serait de mettre ensemble tous les facteurs sauf le facteur "teacher" pour créer une variable dummy et voir l'impact de cette variable sur les moyennes des étudiants.
+Il semble donc que le fait d'avoir un père professeur augmente la moyenne mais sinon la variable Fedu ne joue pas un rôle majeur dans la performance des étudiants.<br>
+
+
+### Guardian
+
+On s'intéresse maintenant à la variable guardian, qui représente le responsable légal de l'enfant. On fait un premier tableau pour avoir les effectifs selon les écoles : <br>
+```{r}
+data_mat$guardian <- as.factor(data_mat$guardian)
+data_por$guardian <- as.factor(data_por$guardian)
+
+guard_tab <-cbind(table(data_mat$guardian, data_mat$school), 
+                  table(data_por$guardian, data_por$school))
+
+tab_fun(guard_tab, above = TRUE, m = 2, p =2,
+        title = "Personne responsable de l'enfant selon la base de données")
+```
+<br>
+On observe que peu importe l'école, il semblerait que la majorité des responsables légaux sont les mères, loin devant les pères et les autres. <br>
+```{r}
+bar_guard_por <- bar_fun(data = data_por, data_por$guardian, 
+                         xlab = "Responsable de l'enfant", ylab = "Proportion",
+                         title = "Responsable de l'enfant selon l'école sur la base de données des notes de portugais",
+                         color = colors1)
+
+bar_guard_mat <- bar_fun(data = data_mat, data_mat$guardian, 
+                         xlab = "Responsable de l'enfant", ylab = "Proportion",
+                         title = "Responsable de l'enfant selon l'école sur la base de données des notes de maths",
+                         color = colors1)
+
+grid_arrange_shared_legend(bar_guard_mat, bar_guard_por, nrow=2,ncol=1)
+```
+
+On va maintenant regarder des diagrammes en boite selon la moyenne sur les 3 notes et selon le responsable légal : <br>
+```{r}
+box_guardian_mat <- box_fun(data = data_mat, x = data_mat$guardian, color = colors1,
+                            xlab = "Responsable", ylab = "Moyenne des notes",
+                            title = "Moyenne générale en maths des étudiants selon 
+l'école et selon le responsable de l'enfant")
+
+box_guardian_por <- box_fun(data = data_por, x = data_por$guardian, color = colors1,
+                            xlab = "Responsable", ylab = "",
+                            title = "Moyenne générale en portugais des étudiants selon 
+l'école et selon le responsable de l'enfant")
+
+grid_arrange_shared_legend(box_guardian_mat, box_guardian_por, nrow=1, ncol=2)
+```
+<br>
+On observe que les notes semblent plus faibles lorsque la mère ou le père n'est pas responsable de l'enfant. En effet, on peut imaginer que les personnes n'ayant pas leur mère ou leur père comme responsable légal vivent dans des situations plus instables (exemple : décès des parents, abandons...), ils n'ont donc peut être pas reçu la même éducation que les autres étudiants. <br>
+Nous allons tester l'égalité des moyennes pour les notes avec la mère et le père comme responsable légal : <br>
+
+```{r}
+test_mat_guardian <- moy.test.auto.var(x = data_mat$gradetot[data_mat$guardian == "father"],
+                                       y = data_mat$gradetot[data_mat$guardian == "mother"],
+                                       moy_x = "Moyenne avec père responsable",
+                                       moy_y = "Moyenne avec mère responsable")
+
+test_por_guardian <- moy.test.auto.var(x = data_por$gradetot[data_por$guardian == "father"],
+                                       y =data_por$gradetot[data_por$guardian == "mother"],
+                                       moy_x = "Moyenne avec père responsable",
+                                       moy_y = "Moyenne avec mère responsable")
+
+test_guardian <- cbind(test_mat_guardian, test_por_guardian)
+colnames(test_guardian) <- c("Maths", "Portugais")
+
+tab_fun(test_guardian, title="Test de moyenne sur la variable guardian (mère et père)", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> Les p-value du test étant de 0.286 et de 0.240, on peut donc en conclure que les moyennes des notes ne sont pas significativement différentes peu importe la matière et le responsable de l'étudiant. On observe cependant une moyenne un peu plus élevée lorsque le père est responsable, peu importe la matière. <br>
+
+
+### Famsup
+
+On s'intéresse ici à la variable famsup, qui représente l'aide que les étudiants reçoivent par leurs parents dans la matière concernée. On regarde le tableau des effectifs selon les écoles et les matières : <br>
+```{r}
+famsup_tab <- cbind(table(data_mat$famsup, data_mat$school), 
+                    table(data_por$famsup, data_por$school))
+
+tab_fun(famsup_tab, m = 2, p = 2, above = TRUE,
+        title = "Étudiants recevant de l'aide de leur famille selon l'école et la base de données")
+```
+<br>
+Nous regardons également un graphique sur les proportions par école et matière : <br>
+```{r}
+bar_famsup_por <- bar_fun(data = data_por, x = data_por$famsup, 
+                          xlab = "Aide de la famille", ylab = "Proportion",
+                          title = "Étudiants recevant de l'aide de leur famille selon l'école sur la base de données des notes de portugais", 
+                          color = colors1)
+
+bar_famsup_mat <- bar_fun(data = data_mat, x = data_mat$famsup, 
+                          xlab = "Aide de la famille", ylab = "Proportion",
+                          title = "Étudiants recevant de l'aide de leur famille selon l'école sur la base de données des notes de maths", 
+                          color = colors1)
+
+grid_arrange_shared_legend(bar_famsup_mat, bar_famsup_por,  nrow=2, ncol=1)
+```
+<br>
+Nous observons que la majorité des étudiants reçoivent de l'aide à la maison peu importe la matière pour l'école Gabriel Pereira. Cependant, nous pouvons remarquer que pour l'école Mousinho da Silveira, les étudiants reçoivent peu d'aides en maths ce qui pourrait s'expliquer par le fait que les maths sont plus faciles dans l'école Mousinho da Silveira et donc que les étudiants n'ont pas besoin d'aides ou alors que la famille est comlètement dépassé par le niveau en maths des étudiants et fait appel à des professeurs particuliers. <br>
+
+Nous allons maintenant regarder les diagrammes en boite selon la moyenne générale : <br>
+```{r}
+box_famsup_mat <- box_fun(data = data_mat, x = data_mat$famsup, color = colors1,
+                            xlab = "Aide de la famille", ylab = "Moyenne des notes",
+                            title = "Moyenne générale en maths des étudiants selon 
+l'école et le fait que leur famille les a aidé")
+
+box_famsup_por <- box_fun(data = data_por, x = data_por$famsup, color = colors1,
+                            xlab = "Aide de la famille", ylab = "",
+                            title = "Moyenne générale en portugais des étudiants selon 
+l'école et le fait que leur famille les a aidé")
+
+grid_arrange_shared_legend(box_famsup_mat, box_famsup_por, nrow=1, ncol=2)
+```
+<br>
+On observe que les notes ne semblent pas différentes que l'étudiant reçoive de l'aide ou pas en maths et portugais. <br>
+```{r}
+test_mat_famsup <- moy.test.auto.var(x = data_mat$gradetot[data_mat$famsup == "yes"],
+                                       y = data_mat$gradetot[data_mat$famsup == "no"],
+                                       moy_x = "Moyenne avec aide de la famille",
+                                       moy_y = "Moyenne sans aide de la famille")
+
+test_por_famsup <- moy.test.auto.var(x = data_por$gradetot[data_por$famsup == "yes"],
+                                       y =data_por$gradetot[data_por$famsup == "no"],
+                                       moy_x = "Moyenne avec aide de la famille",
+                                       moy_y = "Moyenne sans aide de la famille")
+
+test_famsup <- cbind(test_mat_famsup, test_por_famsup)
+colnames(test_famsup) <- c("Maths", "Portugais")
+
+tab_fun(test_famsup, title="Test de moyenne sur la variable famsup", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> Après avoir tester nos moyennes il ne semblerait pas que l'aide de la famille ait un impact significatif sur les notes, peu importe la matière. Cependant, on observe que les moyennes sont légèrements meilleures en maths lorsque la famille n'aide pas l'élève, on pourrait donc imaginer que les portugais ont un niveau en maths faible et embrouillent les élèves ou bien que seulement les élèves en difficulté demandent de l'aide. Pour le portugais, la moyenne semble légèrement plus élevée quand la famille aide l'élève. <br>
+
+
+### Famrel
+<br>
+```{r}
+bar_famrel_math<-ggplot(data[data$matiere=="math",])+
+  aes(x=famrel,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+
+    labs(y="Pourcentage",x="Qualité des relations familiales")+
+  geom_text(aes(label=scales::percent((..count..)/sum(..count..)),
+                y= ((..count..)*100/sum(..count..))), stat="count",  vjust = 1,position = position_dodge(0.9),color="white",size=2.5)+theme_minimal()+
+    labs(title = "Maths")+
+  scale_fill_manual(values=colors1)+
+  theme(legend.position = "none")
+  
+bar_famrel_port<-ggplot(data[data$matiere=="portugais",])+
+  aes(x=famrel,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+
+    labs(y="Pourcentage",x="Qualité des relations familiales")+
+  geom_text(aes(label =scales::percent((..count..)/sum(..count..)),   
+                y= ((..count..)*100/sum(..count..))), stat="count", vjust = 1,position = position_dodge(0.9),color="white",size=2.5)+theme_minimal()+
+    labs(title = "Portugais")+
+  scale_fill_manual(values=colors1)+
+  theme(legend.position = "none")
+
+g_famrel<-ggarrange(bar_famrel_math,bar_famrel_port,common.legend = T,legend = "bottom")
+annotate_figure(g_famrel,top=text_grob("Niveau de qualité des relations familiales"))
+
+```
+<br>
+Si on estime avoir de bonnes relations familiales à partir de 4/5,on peut constater que pour les élèves qui ont étudié les maths, ont de bonnes relations familiales (environ 50%).
+<br>
+Pour les élèves ayant étudié le portugais, on estime de la même manière leurs relations familiales que ceux ayant étudié les maths. <br>
+Mais pour les élèves étant de l'école MS, on observe qu'ils ont de biens meilleures relations si ils ont étudié le portugais plutôt que les maths.
+
+<br>
+```{r}
+chiffre<-c(1,1,2,2,3,3,4,4,5,5)
+ecole<-rep(c("GP","MS"),5)
+
+moyfamrel_math<-c(mean(data_mat$gradetot[data_mat$famrel==1&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$famrel==1&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$famrel==2&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$famrel==2&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$famrel==3&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$famrel==3&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$famrel==4&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$famrel==4&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$famrel==5&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$famrel==5&data_mat$school=="MS"]))
+data_famrel_math<-data.frame(chiffre,ecole,moyfamrel_math)
+data_famrel_math$moyfamrel_math<-round(data_famrel_math$moyfamrel_math,2)
+```
+<br>
+```{r}
+moyfamrel_port<-c(mean(data_por$gradetot[data_por$famrel==1&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$famrel==1&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$famrel==2&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$famrel==2&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$famrel==3&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$famrel==3&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$famrel==4&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$famrel==4&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$famrel==5&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$famrel==5&data_por$school=="MS"]))
+data_famrel_port<-data.frame(chiffre,ecole,moyfamrel_port)
+data_famrel_port$moyfamrel_port<-round(data_famrel_port$moyfamrel_port,2)
+```
+<br>
+```{r}
+bar2_famrel_math<-ggplot(data=data_famrel_math)+aes(x=chiffre,y=moyfamrel_math,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyfamrel_math), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Qualité des relations avec la famille" ,y="Moyenne",title = "Maths")+
+  theme(legend.position = "none")
+
+bar2_famrel_port<-ggplot(data=data_famrel_port)+aes(x=chiffre,y=moyfamrel_port,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyfamrel_port), vjust=1.5, color="#E3E3E3", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=c("#595959","#59CFA3"))+
+  theme_minimal()+labs(x="Qualité des relations avec la famille" ,y="Moyenne",title = "Portugais")+
+  theme(legend.position = "none")
+
+bar_famrel<-ggarrange(bar2_famrel_math,bar2_famrel_port,common.legend = T, legend = "bottom")
+annotate_figure(bar_famrel,top=text_grob("Niveau de qualité des relations familiales"))
+```
+<br>
+
+* Pour les maths, les élèves de l'école GP ont en général une meilleure moyenne que ceux qui sont de l'école MS. Mais rappelons nous que peu d'étudiants de l'école MS font des maths et surtout que la plupart des élèves ont de bonnes relations avec leur famille. Les moyennes ne sont donc peut-être pas représentatives. 
+
+* Pour le portugais, les élèves de l'école GP ont de biens meilleures moyennes que les élèves venant de l'école MS. Mais nous pouvons constater que l'écart de moyenne entre les deux écoles diminue plus la qualité des relations familiales augmentent.
+
+## Milieu scolaire
+
+### Ecole
+
+```{r}
+graph_ecole_mat<-ggplot(data = data_mat) +
+  aes(x=data_mat$gradetot, fill=data_mat$school, col=data_mat$school) +
+  geom_density(alpha = 0.6) +
+  labs(subtitle = "Notes en maths selon l'ecole",
+       x = "Moyenne", y = "Densite")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+graph_ecole_por<-ggplot(data = data_por) +
+  aes(x=data_por$gradetot, fill=data_por$school, col=data_por$school) +
+  geom_density(alpha = 0.6) +
+  labs(subtitle = "Notes en portugais selon l'ecole",
+       x = "Moyenne", y = "Densite")+
+  scale_fill_manual(values = colors1)+
+  theme_minimal()
+
+grid_arrange_shared_legend(graph_ecole_mat,graph_ecole_por,nrow=2,ncol=1,top="Comparaison de moyennes")
+```
+<br>En maths, on remarque que les moyennes semblent similaires. En portugais, les moyennes semblent différentes entre les écoles. <br>
+Nous alons faire des tests pour voir si cela n'est pas dû aux effets d'échantillons :<br>
+
+
+```{r}
+test_mat_school <- moy.test.auto.var(x = data_mat$gradetot[data_mat$school == "GP"],
+                                       y = data_mat$gradetot[data_mat$school == "MS"],
+                                       moy_x = "Moyenne pour l'école Gabriel Pereira",
+                                       moy_y = "Moyenne pour l'école Mousinho Da Silveira")
+
+test_por_school <- moy.test.auto.var(x = data_por$gradetot[data_por$school == "GP"],
+                                       y =data_por$gradetot[data_por$school == "MS"],
+                                       moy_x = "Moyenne pour l'école Gabriel Pereira",
+                                       moy_y = "Moyenne pour l'école Mousinho Da Silveira")
+
+test_school <- cbind(test_mat_school, test_por_school)
+colnames(test_school) <- c("Maths", "Portugais")
+
+tab_fun(test_school, title="Test de moyenne sur la variable school", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+
+```
+<br>On peut voir d'après le tableau que, pour les maths la p-value est > 0.05 ce qui signifie que les moyennes semblent significativement égales mais en portugais au contraire les moyennes semblent significativement différentes car la p-value est inférieure à 0.05 de beaucoup.
+On peut donc en conclure que pour la matière maths les écoles n'expliquent pas les differences de performance des étudiants au contraire de la matière portugais. Tout ceci dans l'hypothèse que les écoles proposent un programme similaires et des évaluations d'un niveau de difficulté identique.<br>
+
+
+### Reason
+
+Nous nous intéressons ici à la variable reason, qui est un facteur sur la raison pour laquelle les étudiants sont venus dans cette école. Les facteurs sont la réputation, les cours, la proximité de leur domicile, et autre. Voici un tableau des effectifs par facteur selon l'école et la matière : <br>
+```{r}
+reason_tab <- cbind(table(data_mat$reason, data_mat$school),
+                    table(data_por$reason, data_por$school))
+
+tab_fun(reason_tab, p = 2, m = 2, above = TRUE,
+        title = "Répartition des étudiants selon la raison de leur présence dans l'école")
+```
+<br>
+Il semblerait que les étudiants de l'école Gabriel Pereira soient majoritairement venus pour les cours et en deuxième on retrouve la réputation de l'école et la proximité de leur résidence. Du côté de l'école Mousinho da Silveira, il semblerait que ce soit majoritairement lié aux cours que proposent l'école. <br>
+On le montre graphiquement : <br>
+```{r}
+bar_reas_por <- bar_fun(data = data_por, x = data_por$reason, color = colors1,
+                        xlab = "Raisons", ylab = "Proportion",
+                        title = "Raison du choix de l'école selon l'école choisi sur la base de données des notes de portugais")
+
+bar_reas_mat <- bar_fun(data = data_mat, x = data_mat$reason, color = colors1,
+                        xlab = "Raisons", ylab = "Proportion",
+                        title = "Raison du choix de l'école selon l'école choisi sur la base de données des notes de maths")
+
+grid_arrange_shared_legend(bar_reas_mat, bar_reas_por, nrow=2,ncol=1)
+```
+<br>
+Nous allons regarder si les les moyennes générales sont impactés par la raison du choix de l'école : <br>
+```{r}
+box_reason_mat <- box_fun(data = data_mat, x = data_mat$reason, color = colors1,
+                          xlab = "Raison", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon l'école et 
+selon la raison du choix de l'école")
+
+box_reason_por <- box_fun(data = data_por, x = data_por$reason, color = colors1,
+                          xlab = "Raison", ylab = "",
+                          title = "Moyenne générale en portugais selon l'école et
+selon la raison du choix de l'école")
+
+grid_arrange_shared_legend(box_reason_mat, box_reason_por, nrow=1, ncol=2)
+```
+<br>
+Pour les notes de portugais, il semblerait que les personnes venues pour la réputation de l'école aient de meilleures notes que les autres, peu importe l'école choisie. Du côté des maths, il ne semblerait pas y avoir de différences de notes par raison. <br>
+
+
+### Traveltime
+
+Nous allons maintenant nous intéresser à la variable traveltime qui représente le temps passer entre le logement et l'école. On regarde le tableau des effectifs selon l'école et la matière : <br>
+```{r}
+data_por$traveltime <- as.factor(data_por$traveltime)
+data_mat$traveltime <- as.factor(data_mat$traveltime)
+
+trav_tab <- cbind(table(data_mat$traveltime, data_mat$school), 
+                  table(data_por$traveltime, data_por$school))
+rownames(trav_tab) <- c("Moins de 15", "Entre 15 et 30", "Entre 30 et 60", "Plus de 60")
+
+tab_fun(trav_tab, p = 2, m = 2, above = TRUE,
+        title = "Temps en minutes jusqu'à l'école selon l'école et la base de données")
+```
+<br>
+On remarque que plus l'on s'éloigne moins il y a de personnes. La majeure partie des étudiants se trouve à moins de 15 minutes de leur école pour l'école Gabriel Pereira, tandis que pour l'école Mousinho da Silveira, il semblerait que la majorité des étudiants habite à entre 15 et 30 minutes de l'école. <br>
+On le confirme par un histogramme : <br>
+```{r}
+bar_trav_por <- bar_fun(data = data_por, x = data_por$traveltime, color = colors1,
+                        xlab = "", ylab = "Proportion",
+                        title = "Temps en minutes de trajet jusqu'à l'école 
+selon l'école sur le dataframe de portugais") +
+  scale_x_discrete(labels = c("1" = "Moins de 15", "2" = "Entre 15 et 30", 
+                              "3" = "Entre 30 et 60", "4" = "Supérieur à 60"))
+
+bar_trav_mat <- bar_fun(data = data_mat, x = data_mat$traveltime, color = colors1,
+                        xlab = "Temps en minutes", ylab = "Proportion",
+                        title = "Temps en minutes de trajet jusqu'à l'école
+selon l'école sur le dataframe de maths") +
+  scale_x_discrete(labels = c("1" = "Moins de 15", "2" = "Entre 15 et 30", 
+                              "3" = "Entre 30 et 60", "4" = "Supérieur à 60"))
+
+grid_arrange_shared_legend(bar_trav_mat, bar_trav_por, nrow=1,ncol=2)
+```
+<br>
+On s'intéresse maintenant à la répartition des notes selon le temps de trajet : <br>
+
+```{r}
+box_traveltime_mat <- box_fun(data = data_mat, x = data_mat$traveltime, color = colors1,
+                          xlab = "Temps en minutes", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon 
+l'école et le temps de trajet")+
+  scale_x_discrete(labels = c("1" = "Moins de 15", "2" = "Entre 15 et 30", 
+                              "3" = "Entre 30 et 60", "4" = "Supérieur à 60"))
+
+box_traveltime_por <- box_fun(data = data_por, x = data_por$traveltime, color = colors1,
+                          xlab = "Temps en minutes", ylab = "",
+                          title = "Moyenne générale en portugais selon 
+l'école et le temps de trajet") +
+  scale_x_discrete(labels = c("1" = "Moins de 15", "2" = "Entre 15 et 30", 
+                              "3" = "Entre 30 et 60", "4" = "Supérieur à 60"))
+
+grid_arrange_shared_legend(box_traveltime_mat, box_traveltime_por, nrow=1, ncol=2)
+```
+<br>
+Il semblerait que plus l'on s'éloigne de l'école moins les notes sont bonnes en portugais et maths pour l'école Gabriel Pereira, tandis que, du côté de l'école Mousinho da Silveira, il ne semble pas y avoir de relation entre notes et temps de trajet. <br>
+
+
+### Studytime
+
+Nous allons maintenant nous intéresser à la variable studytime qui traite du temps en heures par semaine consacré aux études : <br>
+```{r}
+tab_stud <- cbind(table(data_mat$studytime, data_mat$school), 
+                  table(data_por$studytime, data_por$school))
+rownames(tab_stud) <- c("Moins de 2h", "Entre 2 et 5h", "Entre 5 et 10h", "Plus de 10h")
+
+tab_fun(tab = tab_stud, m = 2, p = 2, above = TRUE,
+        title = "Temps travaillé en heures par semaine selon l'école et la base de données")
+```
+<br>
+On remarque que la majorité des étudiants passent moins de 5h par semaine sur leurs cours peu importe l'école et la matière. On le montre avec graphique : <br>
+
+```{r}
+data_mat$studytime <- as.factor(data_mat$studytime)
+data_por$studytime <- as.factor(data_por$studytime)
+
+bar_stud_por <- bar_fun(data = data_por, x = data_por$studytime, color = colors1,
+                        xlab = "", ylab = "Proportion",
+                        title = "Temps en heures passés à travailler par semaine 
+selon l'école sur la base de données des notes de portugais") +
+  scale_x_discrete(labels = c("1" = "Moins de 2", "2" = "Entre 2 et 5", 
+                              "3" = "Entre 5 et 10", "4" = "Supérieur à 10"))
+
+bar_stud_mat <- bar_fun(data = data_mat, x = data_mat$studytime, color = colors1,
+                        xlab = "Temps en heures", ylab = "Proportion",
+                        title = "Temps en heures passé à travailler par semaine 
+selon l'école sur la base de données des notes de maths") +
+  scale_x_discrete(labels = c("1" = "Moins de 2", "2" = "Entre 2 et 5", 
+                              "3" = "Entre 5 et 10", "4" = "Supérieur à 10"))
+
+grid_arrange_shared_legend(bar_stud_mat, bar_stud_por, nrow=1,ncol=2)
+```
+<br>
+Nous allons nous intéresser maintenant à la moyenne des notes selon le temps travaillé : <br>
+```{r}
+box_studytime_mat <- box_fun(data = data_mat, x = data_mat$studytime, color = colors1,
+                          xlab = "Temps en heures", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon l'école et 
+le temps passé par semaine à travailler") +
+  scale_x_discrete(labels = c("1" = "Moins de 2", "2" = "Entre 2 et 5", 
+                              "3" = "Entre 5 et 10", "4" = "Supérieur à 10"))
+
+box_studytime_por <- box_fun(data = data_por, x = data_por$studytime, color = colors1,
+                          xlab = "Temps en heures", ylab = "",
+                          title = "Moyenne générale en portugais selon l'école et 
+le temps passé par semaine à travailler") +
+  scale_x_discrete(labels = c("1" = "Moins de 2", "2" = "Entre 2 et 5", 
+                              "3" = "Entre 5 et 10", "4" = "Supérieur à 10"))
+
+grid_arrange_shared_legend(box_studytime_mat, box_studytime_por, nrow=1, ncol=2)
+```
+<br>
+Il semblerait qu'il y ait une relation croissante entre les notes en portugais et le temps en heure(s) passé à étudier par semaine. Du côté des maths on observe la même chose pour l'école Mousinho da Silveira, cependant, cela semble plus flou pour l'école Gabriel Pereira, on n'a pas l'impression qu'il y ait de relation quelconque, ce qui peut être lié au fait que plus l'on passe de temps sur les maths plus cela veut dire que l'on a des difficultés. <br>
+Nous allons regarder si nos moyennes en maths et portugais dépendent du temps passé sur les cours. On va comparer les moyennes des étudiants travaillant moins de 5h et plus de 5h :
+<br>
+```{r}
+test_mat_studytime <- moy.test.auto.var(x = data_mat$gradetot[data_mat$studytime %in% c("1", "2")],
+                                       y = data_mat$gradetot[data_mat$studytime %in% c("3", "4")],
+                                       moy_x = "Moyenne avec 5h ou moins de travaillé par semaine",
+                                       moy_y = "Moyenne avec plus de 5h de travaillé par semaine")
+
+test_por_studytime <- moy.test.auto.var(x = data_por$gradetot[data_por$studytime %in% c("1", "2")],
+                                       y = data_por$gradetot[data_por$studytime %in% c("3", "4")],
+                                       moy_x = "Moyenne avec 5h ou moins de travaillé par semaine",
+                                       moy_y = "Moyenne avec plus de 5h de travaillé par semaine")
+
+test_studytime <- cbind(test_mat_studytime, test_por_studytime)
+colnames(test_studytime) <- c("Maths", "Portugais")
+
+tab_fun(test_studytime, title="Test de moyenne sur le temps travaillé par semaine", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> On observe donc que les moyennes sont significativement différentes pour le portugais. C'est-à-dire que la moyenne des étudiants travaillant plus de 5h est significativement plus élevée que les étudiants travaillant moins de 5h. Du côté des notes de maths, il semblerait que les notes soient plus élevées pour les personnes travaillant plus de 5h. <br>
+
+
+### Paid
+
+On va maintenant s'intéresser à la variable paid qui correspond aux étudiants ayant reçu de l'aide extra-scolaire de la part de professeurs particuliers. On regarde donc le tableau des effectifs selon la matière et l'école : <br>
+```{r}
+paid_tab <- cbind(table(data_mat$paid, data_mat$school), 
+                  table(data_por$paid, data_por$school))
+
+tab_fun(paid_tab, p = 2, m = 2, above = TRUE,
+        title = "Étudiants recevant de l'aide de professeur(s) en dehors de l'école selon l'école et la base de données")
+```
+<br>
+Il semblerait que les étudiants ne reçoivent presque pas de cours particuliers en portugais, peu importe l'école, tandis que les proportions semblent plutôt similaires pour les maths. On peut donc en conclure que les étudiants ont plus de difficultés en maths qu'en portugais, peu importe l'école. <br>
+
+Ce diagramme en boite nous confirme ce que l'on pensait précédemment : <br>
+```{r}
+
+box_paid_mat <- box_fun(data = data_mat, x = data_mat$paid, color = colors1,
+                            xlab = "Prof particulier", ylab = "Moyenne des notes",
+                            title = "Moyenne générale en maths selon l'école 
+et l'accès à des cours personnels")
+
+box_paid_por <- box_fun(data = data_por, x = data_por$paid, color = colors1,
+                            xlab = "Prof particulier", ylab = "",
+                            title = "Moyenne générale en portugais selon l'école 
+et l'accès à des cours personnels")
+
+grid_arrange_shared_legend(box_paid_mat, box_paid_por, nrow=1, ncol=2)
+```
+<br> 
+Notre a priori initial sur les maths qui disait que peut être les familles payaient des cours particuliers à leurs enfants s'avère fausse puisque l'on remarque que la proportion d'étudiants recevant des cours payés est plus faible que la proportion d'étudiants ne recevant pas de cours payés.
+<br>
+On regarde la moyenne des notes selon l'école, la matière et le fait que les étudiants aient eu un prof particulier ou pas : <br>
+```{r}
+
+box_paid_mat <- box_fun(data = data_mat, x = data_mat$paid, color = colors1,
+                            xlab = "Prof particulier", ylab = "Moyenne des notes",
+                            title = "Moyenne générale en maths des étudiants selon 
+l'école et l'accès à des cours personnels")
+
+box_paid_por <- box_fun(data = data_por, x = data_por$paid, color = colors1,
+                            xlab = "Prof particulier", ylab = "",
+                            title = "Moyenne générale en portugais des étudiants selon 
+l'école et l'accès à des cours personnels")
+
+grid_arrange_shared_legend(box_paid_mat, box_paid_por, nrow=1, ncol=2)
+```
+<br>
+Dans le cas des notes de portugais, les élèves recevant des cours particuliers semblent avoir de légèrement moins bonnes notes que les étudiants ne recevant pas d'aides, cela peut être lié au fait qu'ils ont besoins d'aides et donc c'est pour ça qu'ils prennent des cours particuliers. Cependant, on observe que la dispersion est plus faible, mais cela pourrait être lié à la différence d'effectif entre les 2 groupes. Du côté des maths, il semblerait que les notes soient similaires, peu importe
+que l'on ait un professeur particulier ou pas.<br>
+
+```{r}
+test_mat_paid <- moy.test.auto.var(x = data_mat$gradetot[data_mat$paid == "yes"],
+                                       y = data_mat$gradetot[data_mat$paid == "no"],
+                                       moy_x = "Moyenne avec l'aide d'un professeur particulier",
+                                       moy_y = "Moyenne sans l'aide d'un professeur particulier")
+
+test_por_paid <- moy.test.auto.var(x = data_por$gradetot[data_por$paid == "yes"],
+                                       y =data_por$gradetot[data_por$paid == "no"],
+                                       moy_x = "Moyenne avec l'aide d'un professeur particulier",
+                                       moy_y = "Moyenne sans l'aide d'un professeur particulier")
+
+test_paid <- cbind(test_mat_paid, test_por_paid)
+colnames(test_paid) <- c("Maths", "Portugais")
+
+tab_fun(test_paid, title="Test de moyenne sur la variable paid", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> Il semblerait que les moyennes ne soient pas significativement différentes que l'élève reçoive de l'aide d'un professeur particulier ou pas. Cependant on aurait tendance à penser que l'aide en maths est bénéfique pour les élèves puisque leur moyenne est un peu plus élevée, tandis qu'en portugais il semblerait que seulement les étudiants ayant des difficultés ont un professeur particulier car la moyenne est non significativement plus élevée chez les étudiants ne recevant pas d'aides. <br>
+
+
+### Failures
+
+Nous allons nous intéresser à la variable failures qui comporte les redoublements pour chaque individu : <br>
+```{r}
+failures_tab <- cbind(table(data_mat$failures, data_mat$school), 
+                      table(data_por$failures, data_por$school))
+
+tab_fun(failures_tab, p = 2, m = 2, above = TRUE,
+        title = "Nombre de redoublements selon l'école et la base de données")
+
+```
+<br>
+```{r}
+data_mat$failures <- as.factor(data_mat$failures)
+data_por$failures <- as.factor(data_por$failures)
+
+bar_fail_por <- bar_fun(data = data_por, x = data_por$failures, color = colors1,
+                        xlab = "Nombre de redoublements", ylab = "Proportion",
+                        title = "Nombres de redoublants selon l'école sur la base de données des notes de portugais")
+
+bar_fail_mat <- bar_fun(data = data_mat, x = data_mat$failures, color = colors1,
+                        xlab = "Nombre de redoublements", ylab = "Proportion",
+                        title = "Nombres de redoublants selon l'école sur la base de données des notes de maths")
+
+grid_arrange_shared_legend(bar_fail_mat, bar_fail_por, nrow=2, ncol=1)
+```
+<br>
+La grande majorité des étudiants n'ont jamais redoublé, peu importe l'école. 
+<br>
+On s'intéresse donc à la moyenne des notes selon le nombre de redoublements : <br>
+
+```{r}
+box_failures_mat <- box_fun(data = data_mat, x = data_mat$failures, color = colors1,
+                          xlab = "Redoublement", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon l'école et 
+le fait qu'ils aient redoublés ou pas")
+
+box_failures_por <- box_fun(data = data_por, x = data_por$failures, color = colors1,
+                          xlab = "Redoublement", ylab = "",
+                          title = "Moyenne générale en portugais selon l'école et 
+le fait qu'ils aient redoublés ou pas")
+
+grid_arrange_shared_legend(box_failures_mat, box_failures_por, nrow=1, ncol=2)
+```
+<br>
+On remarque une relation négative entre le nombre de redoublements et la moyenne des notes pour toutes les écoles. Ceci peut semble logique puisqu'un étudiant redouble si il n'a pas de bonnes notes. <br>
+Nous allons confirmer par un test le fait que les étudiants n'ayant jamais redoublé ont une meilleure moyenne que les étudiants ayant redoublé une fois ou plus : <br>
+```{r}
+test_mat_failures <- moy.test.auto.var(x = data_mat$gradetot[data_mat$failures=="0"],
+                                       y = data_mat$gradetot[data_mat$failures%in%c("1", "2", "3")],
+                                       moy_x = "Moyenne des personnes n'ayant jamais redoublé",
+                                       moy_y = "Moyenne des personnes ayant déjà redoublé")
+
+test_por_failures <- moy.test.auto.var(x = data_por$gradetot[data_por$failures=="0"],
+                                       y = data_por$gradetot[data_por$failures%in%c("1", "2", "3")],
+                                       moy_x = "Moyenne des personnes n'ayant jamais redoublé",
+                                       moy_y = "Moyenne des personnes ayant déjà redoublé")
+
+test_failures <- cbind(test_mat_failures, test_por_failures)
+colnames(test_failures) <- c("Maths", "Portugais")
+
+tab_fun(test_failures, title="Test de moyenne selon le nombre de redoublement(s)", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> On observe que peu importe les matières, les moyennes sont significativement différentes avec une moyenne beaucoup plus élevée pour les personnes n'ayant jamais redoublé. <br>
+
+
+### Schoolsup
+
+Nous allons nous intéresser à la variable schoolsup qui représente les étudiants recevant de l'aide extra scolaire : <br>
+```{r}
+schoolsup_tab <- cbind(table(data_mat$schoolsup, data_mat$school), 
+                       table(data_por$schoolsup, data_por$school))
+
+tab_fun(schoolsup_tab, p = 2, m = 2, above = TRUE,
+        title = "Étudiants recevant de l'aide extérieure selon l'école et la base de données")
+
+```
+
+```{r}
+bar_schoolsup_por <- bar_fun(data = data_por, x = data_por$schoolsup, color = colors1,
+                        xlab = "Aides", ylab = "Proportion",
+                        title = "Étudiants recevant de l'aide extérieure selon l'école sur la base de données des notes de portugais")
+
+bar_schoolsup_mat <- bar_fun(data = data_mat, x = data_mat$schoolsup, color = colors1,
+                        xlab = "Aides", ylab = "Proportion",
+                        title = "Étudiants recevant de l'aide extérieure selon l'école sur la base de données des notes de maths")
+
+grid_arrange_shared_legend(bar_schoolsup_mat, bar_schoolsup_por, nrow=2, ncol=1)
+```
+<br>
+On remarque que la très grande majorité ne reçoit pas d'aides extra scolaire (variable en contradiction avec la variable paid, que veut dire "aide extra scolaire" dans ce cas ?). <br>
+Nous allons maintenant nous intéresser aux notes selon le fait que les étudiants reçoivent ou non de l'aide extra scolaire : <br>
+```{r}
+box_schoolsup_mat <- box_fun(data = data_mat, x = data_mat$schoolsup, color = colors1,
+                          xlab = "Aide extra scolaire", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon l'école et 
+selon l'aide extra scolaire reçu")
+
+box_schoolsup_por <- box_fun(data = data_por, x = data_por$schoolsup, color = colors1,
+                          xlab = "Aide extra scolaire", ylab = "",
+                          title = "Moyenne générale en portugais selon l'école et 
+selon l'aide extra scolaire reçu")
+
+grid_arrange_shared_legend(box_schoolsup_mat, box_schoolsup_por, nrow=1, ncol=2)
+```
+<br>
+Il ne semblerait pas qu'il y ait de relation, les notes semblent plutôt égales peu importe l'école. <br>
+On va le vérifier par un test de moyenne : <br>
+```{r}
+test_mat_schoolsup <- moy.test.auto.var(x = data_mat$gradetot[data_mat$schoolsup=="yes"],
+                                       y = data_mat$gradetot[data_mat$schoolsup=="no"],
+                                       moy_x = "Moyenne recevant de l'aide extérieure",
+                                       moy_y = "Moyenne ne recevant pas d'aide extérieure")
+
+test_por_schoolsup <- moy.test.auto.var(x = data_por$gradetot[data_por$schoolsup=="yes"],
+                                       y = data_por$gradetot[data_por$schoolsup=="no"],
+                                       moy_x = "Moyenne recevant de l'aide extérieure",
+                                       moy_y = "Moyenne recevant pas d'aide extérieure")
+
+test_schoolsup <- cbind(test_mat_schoolsup, test_por_schoolsup)
+colnames(test_schoolsup) <- c("Maths", "Portugais")
+
+tab_fun(test_schoolsup, title="Test de moyenne selon l'aide extérieure reçu", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br> Il semblerait que pour la variable maths que les moyennes sont significativement différentes avec une moyenne plus élevée pour les étudiants ne recevant pas d'aides extérieures. Du côté des notes de portugais, il semblerait que les moyennes en portugais soient un peu plus élevées lorsque l'étudiant ne reçoit pas d'aides extérieures. <br>
+
+
+### Nursery
+
+Cette variable représente les étudiants ayant été en maternelle : <br>
+```{r}
+nursery_tab <- cbind(table(data_mat$nursery, data_mat$school), 
+                     table(data_por$nursery, data_por$school))
+
+tab_fun(nursery_tab, p = 2, m = 2, above = TRUE,
+        title = "Étudiants ayant été en maternelle selon l'école et la base de données")
+```
+<br>
+```{r}
+bar_nursery_por <- bar_fun(data = data_por, x = data_por$nursery, color = colors1,
+                        xlab = "Maternelle", ylab = "Proportion",
+                        title = "Étudiants ayant été en maternelle selon l'école sur la base de données des notes de portugais")
+
+bar_nursery_mat <- bar_fun(data = data_mat, x = data_mat$nursery, color = colors1,
+                        xlab = "Maternelle", ylab = "Proportion",
+                        title = "Étudiants ayant été en maternelle selon l'école sur la base de données des notes de maths")
+
+grid_arrange_shared_legend(bar_nursery_mat, bar_nursery_por, nrow=2, ncol=1)
+```
+<br>
+On observe que plus de 75% des étudiants ont été en maternelle. On va donc maintenant regarder si il y a une corrélation entre les notes et le fait d'avoir été à la maternelle ou non : <br>
+
+```{r}
+box_nursery_mat <- box_fun(data = data_mat, x = data_mat$nursery, color = colors1,
+                          xlab = "Maternelle", ylab = "Moyenne des notes",
+                          title = "Moyenne générale en maths selon l'école 
+et si l'étudiant a fait la maternelle")
+
+box_nursery_por <- box_fun(data = data_por, x = data_por$nursery, color = colors1,
+                          xlab = "Maternelle", ylab = "",
+                          title = "Moyenne générale en portugais selon l'école 
+et si l'étudiant a fait la maternelle")
+
+grid_arrange_shared_legend(box_nursery_mat, box_nursery_por, nrow=1, ncol=2)
+```
+<br>
+Il semblerait qu'il n'y ait pas de relation entre le fait d'avoir été à la maternelle et les notes obtenues en portugais et maths, peu importe l'école. <br>
+On le confirme en faisant un test de moyenne : <br>
+```{r}
+test_mat_nursery <- moy.test.auto.var(x = data_mat$gradetot[data_mat$nursery=="yes"],
+                                       y = data_mat$gradetot[data_mat$nursery=="no"],
+                                       moy_x = "Moyenne de ceux ayant été en maternelle",
+                                       moy_y = "Moyenne de ceux n'ayant pas été en maternelle")
+
+test_por_nursery <- moy.test.auto.var(x = data_por$gradetot[data_por$nursery=="yes"],
+                                       y = data_por$gradetot[data_por$nursery=="no"],
+                                       moy_x = "Moyenne de ceux ayant été en maternelle",
+                                       moy_y = "Moyenne de ceux n'ayant pas été en maternelle")
+
+test_nursery <- cbind(test_mat_nursery, test_por_nursery)
+colnames(test_nursery) <- c("Maths", "Portugais")
+
+tab_fun(test_nursery, title="Test de moyenne selon le fait que l'étudiant a été en maternelle ou pas",
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+D'après nos résultats, il ne semblerait pas que d'avoir été en maternelle ait un impact significatif sur les moyennes en maths et portugais, la moyenne n'est que légèrement plus élevée. <br>
+
+
+### Higher
+<br>
+```{r}
+d_higher<-cbind(table(data_mat$higher, data_mat$school), table(data_por$higher, data_por$school))
+
+tab_fun(d_higher,above = T,m=2,p=2,title = "Étudiants voulant continuer leurs études" )
+```
+<br>
+On observe une très grande disparité dans le choix de continuer ou non : seul `r sum(data$higher=="no")` élèves ne souhaitent pas continuer leurs études. 
+
+<br>
+```{r}
+data_mat$higher<-as.factor(data_mat$higher)
+data_por$higher<-as.factor(data_por$higher)
+
+box_higher_math<-ggplot(data=data_mat)+aes(x=higher, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Maths",y="Moyenne")+
+  facet_wrap(~school)
+    
+box_higher_port<-ggplot(data=data_por)+aes(x=higher, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Portugais",y="Moyenne")+
+  facet_wrap(~school)
+
+g_higher<-ggarrange(box_higher_math,box_higher_port)
+annotate_figure(g_higher,top=text_grob("Representation des étudiants voulant ou non faire des études sup"))
+```
+<br>
+
+* Pour le portugais, on observe que les élèves voulant continuer leurs études ont de biens meilleures moyennes que ceux qui ne veulent pas continuer. On voit aussi que pour ceux venant de GP, le 1er quantile de ceux qui veulent continuer est plus élevé que le 3ème quantile de ceux qui veulent arrêter.
+
+* Pour les maths, nous pouvons apporter la même analyse. Nous constatons que les élèves venant de MS et ne voulant pas continuer ont une médiane très importante mais quand nous regardons de plus près, ils ne sont que 3 élèves donc le résultat est peut-être faussé. 
+
+<br>
+```{r}
+test_mat_higher <- moy.test.auto.var(x = data_mat$gradetot[data_mat$higher == "no"],
+                                       y = data_mat$gradetot[data_mat$higher == "yes"],
+                                       moy_x = "Moyenne d'un etudiant qui ne veut pas continuer les études",
+                                       moy_y = "Moyenne d'un etudiant qui veut continuer les etudes")
+
+test_por_higher <- moy.test.auto.var(x = data_por$gradetot[data_por$higher == "no"],
+                                       y =data_por$gradetot[data_por$higher == "yes"],
+                                       moy_x = "Moyenne d'un etudiant qui ne veut pas continuer les études",
+                                       moy_y = "Moyenne d'un etudiant qui veut continuer les etudes")
+
+test_higher <- cbind(test_mat_higher, test_por_higher)
+colnames(test_higher) <- c("Maths", "Portugais")
+
+tab_fun(test_higher, title="Test de moyenne sur la variable higher", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Grâce aux deux p-value et aux intervalles de confiance, on peut affirmer que l'on rejette l'hypothèse $H_0$ qui signifie que les moyennes ne sont pas égales : les deux moyennes sont significativement différentes. <br>
+On peut en conclure que la variable représentant la poursuite d'étude est importante pour les résultats d'un étudiant.
+
+
+### Absences
+<br>
+```{r}
+ggplot(data=data)+
+  aes(x=absences,y=gradetot,color=matiere)+
+  geom_point()+theme_minimal()+
+  geom_smooth(method = "lm", color="brown")+
+  scale_color_manual(values=c("#6666CC","#FF6666"))+
+  labs(y="Moyenne",x="Nombre de jours d'absence", title = "Evolution de la moyenne par rapport aux absences")
+```
+<br>
+
+* Tout d'abord, nous remarquons que les étudiants ayant passé les maths sont plus absents que ceux ayant passé le portugais.
+
+* Ensuite, nous constatons que plus le nombre d'absences augmente plus la moyenne diminue
+
+
+## Extra-scolaire
+
+### Internet
+<br>
+```{r}
+table_internet<-cbind(table(data_mat$internet, data_mat$school), table(data_por$internet, data_por$school))
+
+tab_fun(table_internet,above = T,m=2,p=2,title = "Étudiants ayant internet chez eux" )
+```
+<br>
+La majorité des lycéens ont internet chez eux mais on constate que `r sum(data$internet=="no")` élèves n'y ont pas accès, soit `r round((sum(data$internet=="no") /1009)*100,2)`% des effectifs, ce qui est assez conséquent.
+
+<br>
+```{r}
+box_internet_math<-ggplot(data=data_mat)+aes(x=internet, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Maths",y="Moyenne")+
+  facet_wrap(~school)
+    
+box_internet_port<-ggplot(data=data_por)+aes(x=internet, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Portugais",y="Moyenne")+
+  facet_wrap(~school)
+g_internet<-ggarrange(box_internet_math,box_internet_port)
+annotate_figure(g_internet,top=text_grob("Représentation de la réussite des étudiants ayant internet"))
+```
+<br>
+On constate que les étudiants ayant internet chez eux ont une meilleure moyenne dans leur matière quel que soit leur école.
+Nous voyons de faibles écarts entre ceux qui ont internet et les autres. Seul les élèves en maths ayant internet dans l'école GP se sont plus démarqués des autres.
+
+<br>
+```{r}
+test_mat_internet <- moy.test.auto.var(x = data_mat$gradetot[data_mat$internet == "no"],
+                                       y = data_mat$gradetot[data_mat$internet == "yes"],
+                                       moy_x = "Moyenne d'un etudiant qui ne possede pas internet",
+                                       moy_y = "Moyenne d'un etudiant qui possede internet")
+
+test_por_internet <- moy.test.auto.var(x = data_por$gradetot[data_por$internet == "no"],
+                                       y =data_por$gradetot[data_por$internet == "yes"],
+                                       moy_x = "Moyenne d'un etudiant qui ne possede pas internet",
+                                       moy_y = "Moyenne d'un etudiant qui possede internet")
+
+test_internet<- cbind(test_mat_internet, test_por_internet)
+colnames(test_internet) <- c("Maths", "Portugais")
+
+tab_fun(test_internet, title="Test de moyenne sur la variable internet", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Avec l'aide des résultats, nous pouvons affirmer que nous rejetons l'hypothèse $H_0$: les deux moyennes ne sont pas égales. Cette variable a donc un rôle important dans la réussite scolaire.
+
+
+### Dalc et Walc
+<br>
+```{r}
+bar_Dalc<-ggplot(data=data)+ aes(x=Dalc,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+
+    labs(y="Pourcentage",x="Conso d'alcool semaine")+
+  geom_text(aes(label =scales::percent((..count..)/sum(..count..)),   
+                y= ((..count..)*100/sum(..count..))), stat="count", 
+            vjust = 1,position = position_dodge(0.9),color="white",size=2.5)+
+    theme_minimal()+theme(legend.position = "none")+
+  scale_fill_manual(values = colors1)
+  
+bar_Walc<-ggplot(data=data)+ aes(x=Walc,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+
+    labs(y="Pourcentage",x="Conso d'alcool wk")+
+  geom_text(aes(label =scales::percent((..count..)/sum(..count..)),   
+                y= ((..count..)*100/sum(..count..))), stat="count", 
+            vjust = 1,position = position_dodge(0.9),color="white",size=2.5)+
+    theme_minimal()+theme(legend.position = "none")+
+  scale_fill_manual(values = colors1)
+
+g_alcool<-ggarrange(bar_Dalc,bar_Walc,common.legend = T,legend = "bottom")
+annotate_figure(g_alcool,top=text_grob("Consommation d'alcool dans la semaine et le week-end"))
+```
+<br>
+Si nous considérons qu'une consommation d'alcool est importante à partir de 4, cela signifie que 5% des étudiants ont une consommation importante en semaine et cela passe à 20% le week-end. 
+La non (ou peu) consommation réduit presque de moitié entre la semaine et le week-end (de 69,6% à 38,1%).
+
+<br>
+```{r}
+data_mat$Dalc=as.factor(data_mat$Dalc)
+data_por$Dalc=as.factor(data_por$Dalc)
+box_Dalc_math<-ggplot(data=data_mat)+aes(x=Dalc, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Maths",y="Moyenne")+
+  facet_wrap(~school)
+    
+box_Dalc_port<-ggplot(data=data_por)+aes(x=Dalc, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Portugais",y="Moyenne")+
+  facet_wrap(~school)
+    
+g_dalc<-ggarrange(box_Dalc_math,box_Dalc_port)
+annotate_figure(g_dalc,top = text_grob("Consommation d'alcool la semaine"))
+```
+<br>
+```{r}
+data_mat$Walc=as.factor(data_mat$Walc)
+data_por$Walc=as.factor(data_por$Walc)
+box_Walc_math<-ggplot(data=data_mat)+aes(x=Walc, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Maths",y="Moyenne")+
+  facet_wrap(~school)
+    
+box_Walc_port<-ggplot(data=data_por)+aes(x=Walc, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Portugais",y="Moyenne")+facet_wrap(~school)
+
+g_walc<-ggarrange(box_Walc_math,box_Walc_port)
+annotate_figure(g_walc,top = text_grob("Consommation d'alcool le week-end"))
+
+```
+<br>
+On constate une liaison entre la consommation d'alcool et les résultats : plus la consommation d'alcool est importante, plus la moyenne des notes diminue, elle peut même diminuer jusqu'à deux points. Cette liaison est plus importante pour les lycéens étudiant le portugais. <br>
+
+Nous allons essayer de prouver ceci avec un test.
+<br>
+```{r}
+test_mat_Dalc <- moy.test.auto.var(x = data_mat$gradetot[data_mat$Dalc %in% c("1", "2","3")],
+                                       y = data_mat$gradetot[data_mat$Dalc %in% c("4", "5")],
+                                       moy_x = "Moyenne d'un individu consommant peu d'alcool",
+                                       moy_y = "Moyenne d'un individu consommant beaucoup d'alcool")
+
+test_por_Dalc <- moy.test.auto.var(x = data_por$gradetot[data_por$Dalc %in% c("1", "2","3")],
+                                       y = data_por$gradetot[data_por$Dalc %in% c("4", "5")],
+                                       moy_x = "Moyenne d'un individu consommant peu d'alcool",
+                                       moy_y = "Moyenne d'un individu consommant beaucoup d'alcool")
+
+test_Dalc <- cbind(test_mat_Dalc, test_por_Dalc)
+colnames(test_Dalc) <- c("Maths", "Portugais")
+
+tab_fun(test_Dalc, title="Test de moyenne sur la consommation d'alcool la semaine", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Pour les étudiants en maths, la p-value est supérieure à 0,05 donc on conserve l'hypothèse d'égalité des moyennes. <br>
+Tandis que pour les étudiants en portugais, la p-value est inférieure à 0,05 donc nous rejetons l'hypothèse d'égalité des moyennes. <br>
+En conclusion, la variable sexe ne semble pas avoir un impact majeur dans les notes obtenues en maths par les étudiants alors que du côté des notes de portugais, il semblerait qu'il y ait un impact sur les notes.
+<br>
+```{r}
+test_mat_Walc <- moy.test.auto.var(x = data_mat$gradetot[data_mat$Walc %in% c("1", "2","3")],
+                                       y = data_mat$gradetot[data_mat$Walc %in% c("4", "5")],
+                                       moy_x = "Moyenne d'un individu consommant peu d'alcool",
+                                       moy_y = "Moyenne d'un individu consommant beaucoup d'alcool")
+
+test_por_Walc <- moy.test.auto.var(x = data_por$gradetot[data_por$Walc %in% c("1", "2","3")],
+                                       y = data_por$gradetot[data_por$Walc %in% c("4", "5")],
+                                       moy_x = "Moyenne d'un individu consommant peu d'alcool",
+                                       moy_y = "Moyenne d'un individu consommant beaucoup d'alcool")
+
+test_Walc <- cbind(test_mat_Walc, test_por_Walc)
+colnames(test_Walc) <- c("Maths", "Portugais")
+
+tab_fun(test_Walc, title="Test de moyenne sur la consommation d'alcool le week-end", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+Pour la consommation d'alcool le week-end, nous pouvons en conclure la même chose : la variable Walc a un impact sur les notes de portugais mais pas sur celles de maths. 
+
+### freetime, goout et romantic
+<br>
+```{r}
+bar_freetime<-ggplot(data)+ aes(x=freetime,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+labs(y="Pourcentage")+
+  geom_text(aes(label =scales::percent((..count..)/sum(..count..)),   
+                y= ((..count..)*100/sum(..count..))), stat="count", vjust = 1.5,position = position_dodge(0.9),color="white",size=2.5)+theme_minimal()+
+    labs(title = "Temps libre",x="Niveau de temps libre")+
+  theme(legend.position = "none")+
+  scale_fill_manual(values = colors1)
+
+bar_goout<- ggplot(data)+ aes(x=goout,fill=school)+
+  geom_bar(aes(y=(..count..)*100/sum(..count..)),
+           position = position_dodge())+labs(y=" ")+
+  geom_text(aes(label =scales::percent((..count..)/sum(..count..)),   
+                y= ((..count..)*100/sum(..count..))), stat="count", vjust = 1.5,position = position_dodge(0.9),color="white",size=2.5)+theme_minimal()+
+    labs(title = "Sortie avec des amis",x="Fréquence des sorties")+theme(legend.position = "none")+
+  scale_fill_manual(values = colors1)
+
+g_sortie<-ggarrange(bar_freetime,bar_goout,common.legend = T,legend = "bottom")
+annotate_figure(g_sortie,top=text_grob("Niveau de temps libre et de sortie"))
+```
+<br>
+On constate une forte corrélation entre les deux variables. Pour les deux écoles, on peut observer les proportions : les élèves ont moyennement de temps libre et sortent de la même façon avec leurs amis. 
+<br>
+```{r}
+romantic_GP<-freq(data[data$school=="GP",]$romantic)
+romantic_GP<-romantic_GP[,-3]
+colnames(romantic_GP)<-c("Effectif","Pourcentage")
+romantic_GP$name<-c("Non","Oui")
+
+romantic_MS<-freq(data[data$school=="MS",]$romantic)
+romantic_MS<-romantic_MS[,-3]
+colnames(romantic_MS)<-c("Effectif","Pourcentage")
+romantic_MS$name<-c("Non","Oui")
+```
+<br>
+```{r}
+highchart()%>%
+  hc_add_series(data=romantic_GP,type = "pie",hcaes(y="Pourcentage",x="name"),name="Pourcentage") %>%
+  hc_title(text="Eleve en couple dans l'école GP") %>%
+  hc_colors(colors = c("#CC0000","#336600"))
+  
+
+highchart()%>%
+  hc_add_series(data=romantic_MS,type = "pie",hcaes(y="Pourcentage",x="name"),name="Pourcentage") %>%
+  hc_title(text="Eleve en couple dans l'école MS") %>%
+  hc_colors(colors = c("#CC0000","#336600"))
+```
+<br>
+Les élèves des deux écoles sont en proportion plus célibataire qu'en couple, même si la proportion des célibataires est plus faible dans l'école MS que dans l'école GP (59,4 contre 66,4).
+
+<br>
+```{r}
+moygoout_math<-c(mean(data_mat$gradetot[data_mat$goout==1&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$goout==1&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$goout==2&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$goout==2&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$goout==3&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$goout==3&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$goout==4&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$goout==4&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$goout==5&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$goout==5&data_mat$school=="MS"]))
+data_goout_math<-data.frame(chiffre,ecole,moygoout_math)
+data_goout_math$moygoout_math<-round(data_goout_math$moygoout_math,2)
+```
+<br>
+```{r}
+moyfree_math<-c(mean(data_mat$gradetot[data_mat$freetime==1&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$freetime==1&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$freetime==2&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$freetime==2&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$freetime==3&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$freetime==3&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$freetime==4&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$freetime==4&data_mat$school=="MS"]),
+            mean(data_mat$gradetot[data_mat$freetime==5&data_mat$school=="GP"]),
+            mean(data_mat$gradetot[data_mat$freetime==5&data_mat$school=="MS"]))
+data_free_math<-data.frame(chiffre,ecole,moyfree_math)
+data_free_math$moyfree_math<-round(data_free_math$moyfree_math,2)
+
+```
+<br>
+```{r}
+bar_goout_math<-ggplot(data=data_goout_math)+aes(x=chiffre,y=moygoout_math,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moygoout_math), vjust=1.5, color="white", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=colors1)+
+  theme_minimal()+labs(x="Sortie avec des amis",y="Moyenne",title = "Sortie avec les amis et moyenne")+
+  theme(legend.position = "none")
+```
+<br>
+```{r}
+bar_freetime_math<-ggplot(data=data_free_math)+aes(x=chiffre,y=moyfree_math,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyfree_math), vjust=1.5, color="white",
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=colors1)+
+  theme_minimal()+labs(x="temps libre",y="Moyenne",title = "Rôle du temps libre sur la moyenne")+
+  theme(legend.position = "none")
+gg_sortie_math<-ggarrange(bar_goout_math,bar_freetime_math,common.legend = T, legend = "bottom",ncol = 1)
+```
+<br>
+```{r}
+box_romantic_math<-ggplot(data_mat)+
+                 aes(x=romantic, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Maths",x="en couple",y="Moyenne")+
+  facet_wrap(~school)
+
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(2, 2)))
+define_region <- function(row, col){
+  viewport(layout.pos.row = row, layout.pos.col = col)}
+print(gg_sortie_math, vp = define_region(1:2, 2))
+print(box_romantic_math, vp = define_region(1:2, 1))
+```
+<br>
+Nous allons commencer par les maths :<br>
+
+* Dans l'école GP, il n'y a aucune différence de moyenne que les élèves soient en couple ou non. Pour l'école MS, les élèves ont 2 points de plus que les célibataires. 
+
+* Pour le temps libre des élèves, on ne voit pas de relation positive ou négative entre le temps libre et les moyennes. On peut juste constater que les élèves de GP sont meilleurs que ceux de MS quel que soit le niveau de temps libre. 
+
+* Pour les sorties avec les amis, on observe deux relations inverses : plus les élèves appartenant à l'école GP sortent avec leur amis, plus leur moyenne baissent; alors que pour les élèves de MS, c'est tout le contraire !
+
+<br>
+```{r}
+moygoout_port<-c(mean(data_por$gradetot[data_por$goout==1&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$goout==1&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$goout==2&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$goout==2&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$goout==3&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$goout==3&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$goout==4&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$goout==4&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$goout==5&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$goout==5&data_por$school=="MS"]))
+data_goout_port<-data.frame(chiffre,ecole,moygoout_port)
+data_goout_port$moygoout_port<-round(data_goout_port$moygoout_port,2)
+```
+<br>
+
+```{r}
+moyfree_port<-c(mean(data_por$gradetot[data_por$freetime==1&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$freetime==1&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$freetime==2&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$freetime==2&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$freetime==3&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$freetime==3&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$freetime==4&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$freetime==4&data_por$school=="MS"]),
+            mean(data_por$gradetot[data_por$freetime==5&data_por$school=="GP"]),
+            mean(data_por$gradetot[data_por$freetime==5&data_por$school=="MS"]))
+data_free_port<-data.frame(chiffre,ecole,moyfree_port)
+data_free_port$moyfree_port<-round(data_free_port$moyfree_port,2)
+```
+<br>
+```{r}
+bar_goout_port<-ggplot(data=data_goout_port)+aes(x=chiffre,y=moygoout_port,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moygoout_port), vjust=1.5, color="white", 
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=colors1)+
+  theme_minimal()+labs(x="Sortie avec des amis",y="Moyenne",title = "Sortie avec les amis et moyenne")+
+  theme(legend.position = "none")
+```
+<br>
+```{r}
+bar_freetime_port<-ggplot(data=data_free_port)+aes(x=chiffre,y=moyfree_port,fill=ecole)+
+  geom_bar(position=position_dodge(),stat = "identity")+
+  geom_text(aes(label=moyfree_port), vjust=1.5, color="white",
+            position = position_dodge(0.9), size=3)+
+  scale_fill_manual(values=colors1)+
+  theme_minimal()+labs(x="temps libre",y="Moyenne",title = "Rôle du temps libre sur la moyenne")+
+  theme(legend.position = "none")
+gg_sortie_port<-ggarrange(bar_goout_port,bar_freetime_port,common.legend = T,legend = "bottom",ncol = 1)
+```
+<br>
+```{r}
+box_romantic_port<-ggplot(data_por)+
+                 aes(x=romantic, y=gradetot)+
+    geom_boxplot(fill="#E3E3E3",color="#59CFA3")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),3),
+                 geom="text", size=3, color="red", vjust=-0.9) +
+    stat_summary(fun.y=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") + theme_minimal()+
+      labs(title = "Portugais",x="en couple",y="Moyenne")+
+  facet_wrap(~school)
+
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(2, 2)))
+define_region <- function(row, col){
+  viewport(layout.pos.row = row, layout.pos.col = col)}
+print(gg_sortie_port, vp = define_region(1:2, 2))
+print(box_romantic_port, vp = define_region(1:2, 1))
+```
+<br>
+Pour le portugais: <br>
+
+* On observe que se soit dans l'école GP ou MS, les élèves célibataires ont une moyenne légérement plus élevée que les élèves en couple. 
+
+* Pour les élèves appartenent à l'école GP, on constate que leur meilleure moyenne se situe quand ils sortent peu ou moyennement et pareil pour le temps libre.
+
+* Pour les élèves appartenant à MS, nous pouvons constater la même chose que ceux venant de GP, cependant leurs moyennes sont bien plus basses. 
+<br>
+```{r}
+test_mat_romantic <- moy.test.auto.var(x = data_mat$gradetot[data_mat$romantic == "no"],
+                                       y = data_mat$gradetot[data_mat$romantic == "yes"],
+                                       moy_x = "Moyenne d'un etudiant celibataire",
+                                       moy_y = "Moyenne d'un etudiant en couple")
+
+test_por_romantic <- moy.test.auto.var(x = data_por$gradetot[data_por$romantic == "no"],
+                                       y =data_por$gradetot[data_por$romantic == "yes"],
+                                       moy_x = "Moyenne d'un etudiant celibataire",
+                                       moy_y = "Moyenne d'un etudiant en couple")
+
+test_romantic <- cbind(test_mat_romantic, test_por_romantic)
+colnames(test_romantic) <- c("Maths", "Portugais")
+
+tab_fun(test_romantic, title="Test de moyenne sur la variable romantic", 
+        above = FALSE) %>% row_spec(c(5, 6), color = "red", bold=T)
+```
+<br>
+
+Au vu des graphiques précédents et des résultats des tests, nous pouvons dire que nous conservons l'hypothèse $H_0$ pour les maths, c'est-à-dire que les moyennes ne sont pas significativement différentes. <br>
+Pour le portugais, nous pouvons presque affirmer la même chose. <br>
+Cette variable n'a donc pas un rôle majeur dans la réussite des étudiants.
+
+
+# Conclusion
+
+À la suite de notre analyse descriptive, nous avons pu déterminer quelles variables jouent un rôle prépondérant dans la performance des étudiants : 
+
+* Pour la catégorie renseignement, nous avons l'adresse
+
+* Pour la catégorie famille, nous avons le niveau d'éducation de la mère et du père
+
+* Pour la catégorie milieu scolaire, nous avons l'école (seulement pour la base de données sur le portugais), le temps de travail, les redoublements, la poursuite d'étude, les absences
+
+* Pour la catégorie extre-scolaire, nous avons l'accès à internet, la consommation d'alcool le week-end et la semaine (seulement pour la base de données sur le portugais), le temps libre en dehors des cours et les sorties entre amis. 
+
+Au contraire, nous avons également vu quelles variables ne jouent pas un rôle dans la performance des étudiants : 
+
+* Pour la catégorie renseignement, nous avons le sexe, l'âge et l'état de santé
+
+* Pour la catégorie famille, nous avons la taille de la famille, la situation des parents, le responsable légal, l'aide de la famille et le niveau de la relation avec la famille
+
+* Pour la catégorie milieu scolaire, nous avons l'école (seulement pour la base de données sur les maths), les raisons du choix de l'école, le temps de trajet pour aller à l'école, et si l'élève a été à la maternelle
+
+* Pour la la catégorie extra-scolaire, nous avons la relation amoureuse ou non, la consommation d'alcool le week-end et la semaine (seulement pour les maths)
+
+Toutefois ce classement des variables se base sur de grosses hypothèses et il se peut que nos résultats ne représentent pas parfaitement la réalité. <br>
+De plus, certaines variables peuvent être mises en relation telles que la zone d'habitation et le temps de trajet pour aller à l'école. Le but futur sera donc de trouver des variables qui peuvent être rassemblées et qui peuvent avoir un impact sur la performance des étudiants. Nous pourrons également déterminer, si pour nos deux bases de données, se sont les mêmes variables qui jouent un rôle dans la moyenne des élèves.
+
+Pour finir, nous avons pû remarquer dans notre analyse descriptive que de comparer les deux écoles n'était pas forcement intéressant dû au manque de données pour l'école Mousinho Da Silveira où pour beaucoup de variables nous n'avons que trop peu de données.
+
