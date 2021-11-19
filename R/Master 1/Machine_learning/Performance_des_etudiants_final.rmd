@@ -1,0 +1,1093 @@
+---
+title: "Performance des étudiants"
+author: "Corre, Feteira, Lenoir"
+date: ""
+lang: fr
+output:
+ pdf_document:
+    df_print: kable
+    keep_tex: yes
+    number_section: yes
+    toc: yes
+ rmdformats::readthedown:
+   gallery: no
+   highlight: tango
+   lightbox: yes
+   self_contained: yes
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup, echo = FALSE, cache=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.height = 5.5, 
+                      fig.width = 12, sanitize = TRUE, echo = FALSE, cache = TRUE)
+```
+
+\newpage
+
+# Introduction
+
+Nous allons dans ce rapport essayer de trouver le meilleur modèle de prédiction associé à notre base de données concernant la performance des étudiants au Portugal. L'objectif principal est donc : en ayant comme données les caractéristiques d'un étudiant de pouvoir lui prédire si il a plus de chances d'avoir une bonne ou une mauvaise note. En effet, pour cette étude, notre variable à prédire est la note moyenne de l'étudiant. Soit il aura une bonne note (supérieure à la moyenne de 10), soit une mauvaise note (inférieure à la moyenne).
+Tout d'abord, nous essayerons les modèles d'analyse factorielle discriminante tel que LDA, QDA, MDA ainsi qu'un modèle de régression logistique. Nous comparerons ensuite les différents modèles pour choisir le meilleur.
+
+Ensuite, nous étudierons les differentes techniques d'arbres de classification supervisée tels que les arbres de décisions, les random forest et le boosting. Nous allons également les comparer afin de garder le meilleur modèle final.
+
+Pour nos modèles en analyses factorielles discriminantes, nous les testerons à la fois sur les données avec toutes les variables mais également sur une base de données contenant seulement les variables qui semblaient le plus importantes pendant notre ACM du 1er semestre. Les variables retenues seront :
+
+- `Medu`, `Fedu`, `Mjob`, `Fjob`
+- `studytime`, `failures`, `paid`, `higher`, `absences`
+- `freetime`, `goout`
+- `moyenne_facteur`
+
+
+
+```{r package}
+library(dplyr)
+library(MASS)
+library(ggplot2)#Pour jolis graphiques
+library(pROC)
+library(ROCR)#Pour courbe ROC
+library(tidyverse)
+library(corrplot)#Pour matrice corrélation
+library(kableExtra)#Pour beaux tableaux
+library(stargazer)#Pour affichage regression
+library(rsample)#Pour sous echantillons
+library(rpart)#Pour arbre CART
+library(rpart.plot)#Pour dessiner de jolis arbres
+library(ada)#Pour boosting
+library(randomForest)#Pour les fôrets aléatoires
+library(caret)#pour tuner
+library(doParallel)
+library(FactoMineR)
+library(factoextra)
+library(gridExtra)
+library(ggpubr)#Pour utiliser ggarrange
+library(mda)#annexe
+```
+
+```{r donnees}
+#setwd("E:/Data mining/M1 S2/Rapport")
+source("fonctions.R")
+source("nettoyage_donnees.R")
+```
+
+
+# Nettoyage et création de la variable à prédire
+
+Initialement, on découpe la variable moyenne en 2 catégories : les notes inférieures à 10 et les notes supérieures à 10. De plus on crée les dataframes avec toutes les variables et avec les variables ressorties en ACM.
+
+```{r}
+data_nettoye$moyenne_facteur <- cut(
+  data$moyenne, c(0, 10, 20),
+  labels=c("< 10","> 10")
+  )
+```
+
+```{r}
+effectif_moyenne <- t(table(data_nettoye$moyenne_facteur))
+rownames(effectif_moyenne) <- c("Effectifs")
+tab_fun(effectif_moyenne, title="Effectif par modalité sur les notes")
+```
+
+```{r}
+data_nettoye_court <- data_nettoye[, c(6:9, 13, 14, 17, 20, 24, 25, 29, 30, 32)]
+```
+
+```{r}
+set.seed(1)
+test_LDA <- sample(1:nrow(data_nettoye), size = as.integer(1/4 * 1009), replace = F)
+
+acm <- MCA(data_nettoye[,-c(32)], ind.sup=test_LDA, graph = F, ncp = 55)
+## 55 axes pour 90.6% de l'info totale
+```
+
+
+```{r}
+acm_court <- MCA(data_nettoye_court[,-c(13)], ind.sup=test_LDA, graph = F, ncp = 30) 
+## 30 axes : 95.3% de l'info totale
+```
+
+# Application des méthodes d'analyse factorielle discriminante
+
+## LDA 
+
+### LDA base totale
+
+Pour commencer, nous allons réaliser une LDA sur nos données complètes. Voici la matrice de confusion :
+
+```{r}
+data_acm_train <- as.data.frame(acm$ind$coord)
+data_acm_train$moyenne_facteur <- data_nettoye$moyenne_facteur[-test_LDA]
+lda_fit <- lda(moyenne_facteur~., data=data_acm_train)
+```
+
+```{r}
+data_acm_test <- as.data.frame(acm$ind.sup$coord)
+data_acm_test$moyenne_facteur <- data_nettoye$moyenne_facteur[test_LDA]
+
+res_lda <- predict(lda_fit, newdata=data_acm_test)
+resultat <- res_lda$class
+realite <- data_acm_test$moyenne_facteur
+
+tab_fun(table(realite, resultat), title="Matrice de confusion LDA",above = T) %>% add_header_above(c("","Prediction"=2))
+tab_fun(round(prop.table(table(realite, resultat),
+                         margin = 1), 3),
+        title="Matrice de confusion (proportions)") %>%
+  add_header_above(c("","Prediction"=2))
+
+```
+
+On remarque que pour ce modèle, nous prédisons bien les notes au dessus de la moyenne, toutefois les mauvaises notes sont un peu moins biens prédites.
+
+- Le nombre de bonne prédiction est de `r table(realite, resultat)[1] + table(realite, resultat)[4]`, soit un taux de bonne affectation de `r round((table(realite, resultat)[1] + table(realite, resultat)[4])/length(test_LDA) *100, 3)`\%.
+
+- `r round(table(realite, resultat)[1]/(table(realite, resultat)[1]+table(realite, resultat)[3]) * 100,3)`\% des personnes ayant une moyenne inférieure à 10 sont biens affectées. Ici, on parle de sensibilité.
+
+- `r round(table(realite, resultat)[4]/(table(realite, resultat)[2] + table(realite, resultat)[4])*100,3)`\% des personnes ayant une moyenne supérieure à 10 sont bien affectées. Ici, on parle de spécificité.
+
+```{r}
+erreur_globale_lda <- sum(realite!=resultat)/length(test_LDA)
+```
+
+```{r}
+tab_lda <- roc(realite, res_lda$posterior[, 2])
+ggroc(tab_lda) + ggtitle("Courbe roc lda") +
+  geom_abline(intercept = 1, slope = 1, color="red") + theme_minimal()
+```
+
+```{r}
+aire_lda <- round(tab_lda$auc[1],3)
+```
+
+
+Le modèle n'est pas mauvais mais pas non plus super efficace, surtout pour les personnes ayant une note sous la moyenne.
+L'aire sous la courbe ROC est de `r aire_lda`.
+
+### LDA variables intéressantes
+
+```{r}
+set.seed(1)
+#création du découpage
+data_acm_court_train <- as.data.frame(acm_court$ind$coord)
+data_acm_court_train$moyenne_facteur <- data_nettoye_court$moyenne_facteur[-test_LDA]
+
+lda_fit_court <- lda(moyenne_facteur ~., data = data_acm_court_train)
+
+data_acm_court_test <- as.data.frame(acm_court$ind.sup$coord)
+data_acm_court_test$moyenne_facteur <- data_nettoye_court$moyenne_facteur[test_LDA]
+
+res_lda_court <- predict(lda_fit_court, newdata = data_acm_court_test)
+resultat_court <- res_lda_court$class
+realite_court <- data_acm_court_test$moyenne_facteur
+
+
+tab_lda_court <- roc(realite_court, res_lda_court$posterior[, 2])
+tab_fun(table(realite_court, resultat_court),
+        title="Matrice de confusion LDA court") %>% add_header_above(c("","Prediction"=2))
+tab_fun(round(prop.table(
+  table(realite_court, resultat_court), margin = 1),3),
+  title="Matrice de confusion (proportions)") %>%
+  add_header_above(c("","Prediction"=2))
+
+```
+
+Ici, les bonnes notes sont biens prédites mais seulement la moitié des mauvaises notes sont bien prédites.
+
+- Le nombre de bonnes prédictions est de `r table(realite_court, resultat_court)[1] + table(realite_court, resultat_court)[4]`, soit un taux de bonne affectation de `r round((table(realite_court, resultat_court)[1] + table(realite_court, resultat_court)[4])/length(test_LDA) *100,3)`\%.
+
+- La sensibilité est de `r round(table(realite_court, resultat_court)[1]/(table(realite_court, resultat_court)[1] + table(realite_court, resultat_court)[3]) * 100,3)`\% , c'est à dire le taux de personnes ayant une moyenne inférieure à 10  qui sont biens affectées. 
+
+- La spécificité est de `r round(table(realite_court, resultat_court)[4]/(table(realite_court, resultat_court)[2] + table(realite_court, resultat_court)[4])*100,3)`\% , c'est à dire le taux de personnes ayant une moyenne supérieure à 10 qui sont biens affectées.
+
+```{r}
+erreur_globale_lda_court <- sum(realite_court!=resultat_court)/ length(test_LDA)
+```
+
+Nous retrouvons toujours ce problème où notre prédiction sur les moyennes faibles est mauvaise.
+
+```{r}
+ggroc(tab_lda_court) + ggtitle("Courbe roc lda_court") +
+  geom_abline(intercept = 1, slope = 1, color="red") + theme_minimal()
+```
+
+
+```{r}
+aire_lda_court <- round(tab_lda_court$auc[1],3)
+```
+
+Ici, l'aire sous la courbe observée est de `r aire_lda_court`. Ce qui est un tout petit peu moins que pour la LDA sur données complètes.
+
+## QDA
+
+### Base totale
+
+```{r}
+qda_fit <- qda(moyenne_facteur~., data = data_acm_train)
+res_qda <- predict(qda_fit, newdata = data_acm_test)
+resultat_qda <- res_qda$class
+realite_qda <- data_acm_test$moyenne_facteur
+
+tab_fun(table(realite_qda, resultat_qda), title="Matrice de confusion QDA") %>% add_header_above(c("","Prediction"=2))
+tab_fun(round(
+  prop.table(table(realite_qda, resultat_qda), margin = 1),3), 
+  title="Matrice de confusion (proportions)") %>%
+  add_header_above(c("","Prediction"=2))
+```
+
+```{r}
+erreur_globale_qda <- round(sum(realite_qda!=resultat_qda)/length(test_LDA),3)
+```
+
+Nous remarquons que l'on prédit un peu mieux les mauvaises moyennes et un peu moins bien les bonnes moyennes. Au final, on a un moins bon modèle avec une erreur globale plus élevée.
+
+- Le taux de bonnes prédictions est de `r table(realite_qda, resultat_qda)[1] + table(realite_qda, resultat_qda)[4]`, soit un taux de bonne affectation de `r round(((table(realite_qda, resultat_qda)[1] + table(realite_qda, resultat_qda)[4])/length(test_LDA)) *100,3)`\%.
+
+- `r round(table(realite_qda, resultat_qda)[1]/(table(realite_qda, resultat_qda)[1] + table(realite_qda, resultat_qda)[3])*100,3)`\% des personnes ayant une moyenne inférieure à 10 sont biens affectées.
+
+- `r round(table(realite_qda, resultat_qda)[4]/(table(realite_qda, resultat_qda)[2] + table(realite_qda, resultat_qda)[4])*100,3)`\% des personnes ayant une moyenne supérieure à 10 sont biens affectées.
+
+
+```{r}
+pred_qda <- prediction(res_qda$posterior[, 2], realite_qda)
+roc_qda <- performance(pred_qda, "tpr", "fpr")
+```
+
+```{r}
+tab_qda <- roc(realite_qda, res_qda$posterior[, 2])
+ggroc(tab_qda) + ggtitle("Courbe roc qda ") +
+  geom_abline(intercept = 1, slope = 1, color = "red") + theme_minimal()
+```
+
+```{r}
+aire_qda <- round(tab_qda$auc[1],3)
+```
+
+Comme vu dans le tableau, le modèle est un peu moins performant, avec une aire sous la courbe ROC égale à  `r aire_qda`.
+
+### Variables ressorties en ACM
+
+```{r}
+qda_fit_court <- qda(moyenne_facteur ~., data = data_acm_court_train)
+res_qda_court <- predict(qda_fit_court, newdata = data_acm_court_test)
+resultat_qda_court <- res_qda_court$class
+realite_qda_court <- data_acm_court_test$moyenne_facteur
+
+tab_fun(table(realite_qda_court, resultat_qda_court),
+        title="Matrice de confusion QDA variables ressorties en ACM") %>% add_header_above(c("","Prediction"=2))
+tab_fun(round(
+  prop.table(table(realite_qda_court, resultat_qda_court), margin = 1),3),
+        title="Matrice de confusion (proportions)")%>%
+  add_header_above(c("","Prediction"=2))
+
+
+pred_qda_court <- prediction(res_qda_court$posterior[, 2], realite_qda_court)
+roc_qda_court <- performance(pred_qda_court, "tpr", "fpr")
+```
+
+```{r}
+erreur_globale_qda_court <- sum(realite_qda_court!=resultat_qda_court)/length(test_LDA)
+```
+
+Nous remarquons que l'on prédit encore un peu mieux les mauvaises moyennes et un peu moins bien les bonnes moyennes. Au final, on a un bon modèle avec seulement `r round(erreur_globale_qda_court,3)`\% d'erreur globale.
+
+- Le nombre de bonnes prédictions est de `r table(realite_qda_court, resultat_qda_court)[1] + table(realite_qda_court, resultat_qda_court)[4]`, soit un taux de bonne affectation de `r round(((table(realite_qda_court, resultat_qda_court)[1] + table(realite_qda_court, resultat_qda_court)[4])/length(test_LDA)) *100,3)` \%.
+
+- `r round(table(realite_qda_court, resultat_qda_court)[1]/(table(realite_qda_court, resultat_qda_court)[1] + table(realite_qda_court, resultat_qda_court)[3])*100,3)` \% des personnes ayant une moyenne inférieure à 10 sont biens affectées.
+
+- `r round(table(realite_qda_court, resultat_qda_court)[4] /(table(realite_qda_court, resultat_qda_court)[2] + table(realite_qda_court, resultat_qda_court)[4])*100,3)` \% des personnes ayant une moyenne supérieure à 10 sont biens affectées.
+
+
+```{r}
+tab_qda_court <- roc(realite_qda_court, res_qda_court$posterior[, 2])
+ggroc(tab_qda_court) + ggtitle("Courbe roc qda avec variables ressorties en ACM") +
+  geom_abline(intercept = 1, slope = 1, color = "red")+ theme_minimal()
+```
+
+
+```{r}
+aire_qda_court <- round(tab_qda_court$auc[1],3)
+```
+
+Nous avons un bon modèle avec une AUC de `r aire_qda_court`.
+
+
+## Comparaison de nos modèles:
+
+Nous allons maintenant comparer tous nos modèles en utilisant la courbe ROC pour chacun de ceux-ci :
+
+```{r}
+ggroc(list(lda_court=tab_lda_court, lda=tab_lda, qda=tab_qda, qda_court=tab_qda_court)) +
+  ggtitle("Récapitulatif des courbes ROC") +
+  geom_abline(intercept = 1, slope = 1, color="red") + theme_minimal()
+```
+
+```{r}
+vecteur <- c(erreur_globale_lda, erreur_globale_lda_court, erreur_globale_qda,
+             erreur_globale_qda_court)
+vecteur_aire<-c(aire_lda, aire_lda_court, aire_qda, aire_qda_court)
+tab <- data.frame(vecteur, vecteur_aire)
+colnames(tab)=c("Erreur globale", "AUC")
+rownames(tab)=c("LDA", "LDA court", "QDA", "QDA court")
+
+tab_fun(round(tab, 3), title="Comparaison des modèles AFD")
+```
+
+Notre meilleur modèle est donc le tout premier modèle réalisé, c'est-à-dire le modèle LDA sur notre base de données complète avec une erreur de `r round(erreur_globale_lda, 3)`. Ensuite viennent les modèles LDA court et QDA court qui sont quasiment similaires. Enfin, le moins bon modèle est le modèle QDA sur base complète avec une erreur de `r erreur_globale_qda`.
+
+
+## Modèle Logit
+
+On a également décidé de tester nos données sur le modèle logit. Nous n'avons pas décidé de reprendre la base de données avec les coordonnées des individus de l'ACM car à la fin de ce modèle, nous allons faire une première interprétation de nos variables.
+
+```{r}
+set.seed(1)
+data_logit <- data_nettoye[, c(1, 8, 11:15, 20, 29, 32)]
+data_logit <- data_logit %>% initial_split(prop = 3/4)
+test_logit <- data_logit %>% testing()
+train_logit <- data_logit %>% training()
+
+logit_train <- glm(moyenne_facteur~., data = train_logit, family = "binomial")
+res_logit <- predict(logit_train, newdata = test_logit, type = "response")
+```
+
+```{r}
+seuil <- 0.5
+prediction_logit <- cut(res_logit, breaks=c(-Inf, seuil, Inf), 
+                        labels=c("< 10", "> 10"))
+matrice_confusion_logit <- table(test_logit$moyenne_facteur, prediction_logit, 
+                                 dnn=c("Réalité", "Prédit"))
+
+tab_fun(matrice_confusion_logit, title="Matrice de confusion logit")
+
+prop_matrice_confusion_logit <- round(prop.table(matrice_confusion_logit, margin=1), 3)
+tab_fun(prop_matrice_confusion_logit, 
+        title= "Proportions par ligne de la matrice de confusion logit")
+```
+
+On peut remarquer que les résultats sont similaires aux modèles LDA et QDA, en effet on prédit bien les bonnes notes mais moins bien les mauvaises.
+
+```{r}
+logistic_regression_court <- 
+  glm(moyenne_facteur ~., data = data_logit, family = "binomial")
+#summary(logistic_regression_court)
+stargazer(logistic_regression_court, type="text")
+```
+
+```{r}
+erreur_globale_logit<-round(sum(matrice_confusion_logit[2],matrice_confusion_logit[3])/nrow(test_logit),3)
+```
+
+\newpage
+
+Lorsque l'on passe notre modèle sur toutes les données, on remarque que les variables school, failures (le fait de redoubler au moins une fois ici), higher (le fait de vouloir faire des études supérieures), studytime pour la modalité "5-10h" en comparaison à la modalité "< 2h" et Mjob pour la modalité "services" en comparaison à la modalité "at_home" semblent se différencier. Ces variables sont significatives. Nous retrouvons donc des résultats plutôt similaires à ce que l'on avait dans l'ACM du premier semestre. L'erreur du modèle logit est de `r erreur_globale_logit*100`\%, ce qui est mieux que notre LDA. Pour conclure, voici une représentation de la courbe ROC de notre modèle logit.
+
+```{r}
+prediction_logit <- prediction(res_logit, test_logit$moyenne_facteur)
+roc_logit <- performance(prediction_logit, "tpr", "fpr")
+plot(roc_logit,  xlab="Spécificité", ylab="Sensibilité", main="Courbe ROC du modèle logit")
+abline(a=0, b=1, col="red")
+```
+
+\newpage
+
+# Arbres de classification supervisée.
+
+Danc cette partie, nous allons essayer de chercher nos meilleurs modèles en fonction des différentes familles. Nous commencerons par les arbres de décision en utilisant `Rpart`, puis les `random forest` et `bagging`, nous finirons par le `boosting`. Pour chaque partie, nous modifierons les paramètres afin de trouver le meilleur modèle.
+
+En dernier lieu, nous comparerons tous nos meilleurs modèles de chaque famille afin de pouvoir choisir notre meilleur modèle final et l'appliquer à nos données.
+
+## Arbres de décisions
+
+```{r}
+set.seed(1)
+#Decoupage
+data_nettoye_split <- data_nettoye %>% initial_split(prop = 3/4)
+# sous echantillons
+test <- data_nettoye_split %>% testing()
+train <- data_nettoye_split %>% training()
+```
+
+
+```{r}
+arbre_max <- rpart.control(cp = 0, max.depth = 0, minbucket = 1, minsplit = 1)
+tree <- rpart(moyenne_facteur~. , data=train, control=arbre_max, 
+              parms = list(split = "information"))
+```
+
+Après avoir fait un premier arbre, nous déterminons la valeur optimale de complexité de l'arbre pour en construire un nouveau. 
+
+```{r}
+plotcp(tree) ## complexité de l'arbre
+tab_fun(round(head(tree$cp, -9),3), title="Complexité")
+```
+
+Avec l'aide de ce graphique, le nombre de noeuds optimal pour élaguer notre arbre est de 22, pour une complexité de 0.0087. 
+
+Voici un aperçu de notre arbre final : 
+
+```{r, fig.height= 10, fig.width = 15}
+treebis <- prune(tree, cp = 0.0087)
+prp(treebis, type=0, extra=1,split.box.col="darkred",
+    cex=0.6,box.palette = c("grey","#526565"),branch.col="black", shadow.col = "grey",split.col="White")
+```
+
+Nous allons maintenant tester notre arbre final sur les données tests pour déterminer s'il classe bien la moyenne de nos individus en fonction de leurs caractéristiques.
+
+```{r}
+pred_tree <- predict(treebis, newdata = test, type = "class")
+tab_fun(table(pred_tree, test[,32]), title="Matrice de confusion arbre de décision") %>% add_header_above(c("","Réalité"=2))
+erreur_moyenne_rpart <- mean(pred_tree != test[,32])
+```
+
+D'après la matrice de confusion sur nos données test, on remarque que :
+
+- `r round((table(pred_tree, test[,32])[1] + table(pred_tree, test[,32])[4])/nrow(test)*100,3)`\% de nos données sont biens prédites.
+- La sensibilité est de `r round(table(pred_tree, test[,32])[1] / (table(pred_tree, test[,32])[1] + table(pred_tree, test[,32])[2])*100,3)`\%.
+- La spécificité est de `r  round(table(pred_tree, test[,32])[4] / (table(pred_tree, test[,32])[3] + table(pred_tree, test[,32])[4])*100,3)`\%.
+- Nous avons une erreur moyenne de `r round(erreur_moyenne_rpart*100,3)` \% pour ce modèle.
+
+#### Importance des variables
+
+```{r}
+data.frame(vi=treebis$variable.importance, variable=names(treebis$variable.importance)) %>%
+  ggplot() + aes(x= reorder(variable,vi), y = vi) + 
+  geom_col(width = 0.4, color = "darkred", fill = "darkred") +
+  coord_flip() + labs(y = "Mesure d'importance", x = NULL)+theme_minimal()
+```
+
+On remarque qu'au niveau de mesure d'importance, c'est la variable `failures` qui est la plus importante, suivie de `Walc` (consommation d'alcool le week-end) et `matière`.
+
+```{r}
+legende <- c("< 10"="darkred", "> 10"="#526565")
+failures_hist<-ggplot(data=data_nettoye) + geom_histogram(stat="count") + 
+  aes(failures, fill=moyenne_facteur)+ labs(y="Effectif")+theme_minimal()+scale_fill_manual(values=legende)+ labs(fill="Moyenne")
+
+Walc_hist<-ggplot(data=data_nettoye) + geom_histogram(stat="count") + 
+  aes(Walc, fill=moyenne_facteur, palette="jco")+ labs(y="Effectif")+ theme_minimal()+scale_fill_manual(values=legende)+ labs(fill="Moyenne")
+
+
+ggarrange(failures_hist, Walc_hist, ncol=2, nrow=1, common.legend = TRUE)
+```
+
+Grâce à ces graphiques, on peut bien remarquer que pour la variable `failures` plus le nombre de redoublement est important, plus la proportion d'étudiants ayant une mauvaise note est importante. Pour 2 ou 3 redoublements, quasiment 100% des étudiants ont une moyenne en dessous de 10.
+En ce qui concerne la variable `Walc`, plus la consommation est importante, plus la part de mauvaises notes augmente également.
+
+
+## Fôrets aléatoires
+
+```{r}
+rf <- randomForest(moyenne_facteur ~ ., data = train, method = "class", ntree = 300,
+                   parms = list(split = "gini"), na.action = na.roughfix,
+                   keep.forest = TRUE, importance = TRUE)
+```
+
+On va tout d'abord choisir le nombre d'arbres qui semble optimal grâce à un graphique représentant l'erreur OOB en fonction du nombre d'arbres. Il semblerait que 200 arbres soit une bonne valeur.
+
+```{r}
+ggplot() + aes(1:300, rf$err.rate[, 1]) + geom_line(color="darkred") + xlab("Nombre d'arbres") +
+  ylab("Erreur OOB")+ theme_minimal()+ labs(title = "Erreur_OOB en fonction du nombre d'arbres")
+```
+
+Le meilleur nombre d'arbres semblerait être à environ 200. On a pas décidé de prendre moins car nous avons peu de données donc ce n'est pas très coûteux pour l'ordinateur de faire environ 50 arbres de plus.
+
+Après avoir déterminer quel était le meilleur nombre d'arbres, nous determinons le nombre de variables à faire varier à chaque scission et on visualise les erreurs OOB. Il semblerait que prendre `mtry` = 8 soit la meilleure solution.
+
+```{r}
+# modification du nombre de variables choisies à chaque étape.
+nvar <- ncol(train) - 1
+rfq1 <- randomForest(moyenne_facteur ~ .,
+  data = train, method = "class", ntree = 200,
+  parms = list(split = "gini"), mtry = 1, na.action = na.roughfix
+)
+rfq4 <- randomForest(moyenne_facteur ~ .,
+  data = train, method = "class", ntree = 200,
+  parms = list(split = "gini"), mtry = 4, na.action = na.roughfix
+)
+rfq8 <- randomForest(moyenne_facteur ~ .,
+  data = train, method = "class", ntree = 200,
+  parms = list(split = "gini"), mtry = 8, na.action = na.roughfix
+)
+rfq16 <- randomForest(moyenne_facteur ~ .,
+  data = train, method = "class", ntree = 200,
+  parms = list(split = "gini"), mtry = 16, na.action = na.roughfix
+)
+```
+
+```{r}
+legende <- c("q = 1"="blue", "q = 4"="red", "q = 8"="yellow", "q = 16"="green")
+ggplot() + geom_line(aes(1:200, rfq1$err.rate[, 1], color="q = 1")) + 
+  geom_line(aes(1:200, rfq4$err.rate[, 1], color="q = 4")) +
+  geom_line(aes(1:200, rfq8$err.rate[, 1], color="q = 8")) +
+  geom_line(aes(1:200, rfq16$err.rate[, 1], color="q = 16")) +
+  xlab("Nombre d'arbres") + ylab("Erreur OOB") +
+  labs(color = "Nombre de variables", title="Erreur OOB selon le nombre de variables")+theme_minimal()
+```
+
+Un nombre de variables = 8 est le plus optimal pour un nombre d'arbre maximum de 200.
+
+
+```{r}
+cl <- detectCores() %>% -1 %>% makeCluster
+registerDoParallel(cl)
+
+rfGrid <- expand.grid(mtry = c(5, 6, 8, 16))
+ctrlCv <- trainControl(method = "repeatedcv", repeats = 10, number = 5)
+rf.caret <- train(moyenne_facteur ~ .,
+                  data = train, method = "rf", na.action = na.omit,
+                  trControl = ctrlCv, tuneGrid = rfGrid)
+
+rf_optimal<-rf.caret$finalModel
+#rf.caret$bestTune
+stopImplicitCluster()
+
+```
+
+En ce qui concerne la profondeur de notre arbre, les résultats changeaient trop et il était impossible de choisir la bonne valeur, nous garderons donc une valeur qui était toujours faible, c'est à dire une profondeur de 50.
+
+Voici un tableau récapitulatif des différents modèles de random forest afin de choisir le meilleur modèle : 
+
+```{r}
+test.data.complete <- test[complete.cases(test), ]
+
+err_test_q1<-mean(predict(rfq1, newdata = test.data.complete, 
+                          type = "class", na.action = na.roughfix)
+                  != test.data.complete[, 32])
+err_test_q4<-mean(predict(rfq4, newdata = test.data.complete, 
+                          type = "class", na.action = na.roughfix)
+                  != test.data.complete[, 32])
+err_test_q8<-mean(predict(rfq8, newdata = test.data.complete, 
+                          type = "class", na.action = na.roughfix)
+                  != test.data.complete[, 32])
+err_test_q16<-mean(predict(rfq16, newdata = test.data.complete, 
+                           type = "class", na.action = na.roughfix)
+                   != test.data.complete[, 32])
+
+err_test_optimal <- mean(
+predict.train(rf.caret, newdata = test.data.complete)!= test.data.complete[, 32]
+)
+
+
+err_OOB_q1 <- round(mean(rfq1$err.rate[,1]), 3)
+err_OOB_q4 <- round(mean(rfq4$err.rate[,1]), 3)
+err_OOB_q8 <- round(mean(rfq8$err.rate[,1]), 3)
+err_OOB_q16 <- round(mean(rfq16$err.rate[,1]), 3)
+err_OOB_opti <- round(mean(rf_optimal$err.rate[,1]), 3)
+
+vec_erreur_test_q <- round(c(err_test_q1, err_test_q4, err_test_q8, err_test_q16, err_test_optimal),3)
+vec_erreur_OOB_q <- c(err_OOB_q1, err_OOB_q4,err_OOB_q8, err_OOB_q16, err_OOB_opti)
+tab_3 <- data.frame(vec_erreur_test_q)
+tab_3 <- cbind(tab_3, vec_erreur_OOB_q)
+colnames(tab_3) <- c("Err_test", "Err_OOB")
+rownames(tab_3) <- c("RF : q=1", "RF : q=4", "RF : q=8", "RF : q=16",
+                     "Validation croisée : 10 répétitions")
+tab_fun(tab_3, title="Modèles random forest")
+```
+
+À la lecture du tableau, on peut voir que l'erreur OOB (Out Of Bag) est la plus basse avec notre modèle tuné. Les paramètres de notre modèle tuné sont 500 arbres et `mtry`= 16. Toutefois, l'erreur OOB pour `mtry`= 8 et un nombre d'arbres égal à 200 est quasiment similaire. On choisi donc le modèle avec 200 arbres et 8 mtry qui est moins coûteux pour une erreur quasiment égale.
+
+```{r}
+best_rf <- randomForest(moyenne_facteur ~ ., data = train, method = "class", ntree = 200,
+                        parms = list(split = "gini"), na.action = na.roughfix,
+                        keep.forest = TRUE, importance = TRUE, mtry= 8, maxnodes= 50)
+```
+
+
+```{r}
+legende <- c("OOB"="blue", "< 10"="red", "> 10"="yellow")
+ggplot() + geom_line(aes(1:200, best_rf$err.rate[, 1], color="OOB")) + 
+  geom_line(aes(1:200, best_rf$err.rate[, 2], color="< 10")) +
+  geom_line(aes(1:200, best_rf$err.rate[, 3], color="> 10")) +
+  xlab("Nombre d'itérations") + ylab("Erreur") +
+  labs(color = "Modalité", 
+       title="Erreur OOB et de chaque modalité de notre meilleur modèle")+
+  theme_minimal()+ lims(y=c(0,0.75))
+```
+
+On remarque que l'erreur pour la classe des bonnes moyennes est beaucoup moins importante que l'erreur pour la classe des mauvaises moyennes. Ce qui nous donne une erreur OOB général autour de de 0.28.
+
+\newpage
+
+### Importance des variables
+
+```{r}
+varImpPlot(best_rf, main = "Importance des variables du meilleur modèle rf", cex = 0.9)
+```
+
+On remarque que l'on a toujours les mêmes variables qui jouent un rôle important : les variables `failures`, `matiere`, `higher`, `Walc`.
+
+## Bagging
+
+Pour le bagging, c'est la même méthode que pour la forêt aléatoire mais on utilise `mtry`= nvar, notre nombre de variable totale.
+
+```{r}
+nvar <- ncol(data_nettoye) - 1
+bag <- randomForest(moyenne_facteur ~ ., data = train, method = "class", ntree = 500,
+  parms = list(split = "gini"), mtry = nvar, na.action = na.roughfix)
+
+bag_2 <- randomForest(moyenne_facteur ~ .,data = train, method = "class", ntree = 400,
+  parms = list(split = "gini"), mtry = nvar, na.action = na.roughfix)
+
+bag_3 <- randomForest(moyenne_facteur ~ .,data = train, method = "class", ntree = 300,
+  parms = list(split = "gini"), mtry = nvar, na.action = na.roughfix)
+
+bag_4 <- randomForest(moyenne_facteur ~ .,data = train, method = "class", ntree = 200,
+  parms = list(split = "gini"), mtry = nvar, na.action = na.roughfix)
+
+bag_5 <- randomForest(moyenne_facteur ~ .,data = train, method = "class", ntree = 100,
+  parms = list(split = "gini"), mtry = nvar, na.action = na.roughfix)
+
+vecteur_bag <- 
+  c(mean(bag$err.rate), mean(bag_2$err.rate), mean(bag_3$err.rate), mean(bag_4$err.rate),
+    mean(bag_5$err.rate))
+tab_2 <- as.data.frame(vecteur_bag)
+tab_2<-round(tab_2,3)
+colnames(tab_2) <- c("erreur moyenne_OOB")
+rownames(tab_2) <- c("500 arbres", "400 arbres", "300 arbres", "200 arbres", "100 arbres")
+tab_fun(tab_2, title="Erreur bagging en fonction du nombre d'arbres")
+```
+
+```{r}
+best_bagging <- randomForest(moyenne_facteur ~ ., data = train, 
+                             method = "class", 
+                             ntree = 400, parms = list(split = "gini"), 
+                             mtry = nvar, na.action = na.roughfix)
+
+err_bagging<-mean(predict(best_bagging, newdata = test.data.complete, 
+                          type = "class", na.action = na.roughfix)
+                  != test.data.complete[, 32])
+err_bagging<-round(err_bagging,3)
+```
+
+
+Notre meilleur modèle de bagging semble donc être celui avec 400 arbres. Nous allons donc créer ce modèle et le tester sur nos données test afin d'avoir notre erreur. Finalement, avec notre bagging, nous avons une erreur sur les données test de `r err_bagging`.
+
+
+## Boosting
+
+Pour le boosting, nous allons chercher le meiller modèle parmi : le boosting sur arbre complet, le boosting avec stumps non pénalisés et pénalisés ainsi que boosting simple avec pénalisation. Les pénalisations seront de 0.1 et 0.01.
+
+```{r}
+boost <- ada(moyenne_facteur ~ .,
+  data = train, type = "discrete", loss = "exponential",
+  control = rpart.control(cp = 0), iter = 1000, nu = 1, test.y=test[,32],
+  test.x=test[,-32]
+)
+
+
+nbr_iter<-c(50,100,200,500,1000)
+tab_boost<-c()
+for (i in 1:5){
+    tab_boost[i]<-round(mean(boost$model$errs[nbr_iter[i],3]),3)
+}
+
+niter <- 200
+1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(boost_train = boost$model$errs[1:niter, 1],
+         boost_test = boost$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:3, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Boosting", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()+scale_color_manual(values=c("darkred","#526565"))+labs(color="Erreurs")
+```
+
+Ici, l'erreur d'entrainement descend très vite à zéro alors que l'erreur en test reste autour de 0.3-0.35. Ce modèle n'est donc pas optimal.
+
+### Stumps
+
+```{r}
+booststump<- ada(moyenne_facteur~., data= train, type="discrete", loss="exponential",
+                 control = rpart.control(maxdepth =1, cp=-1, minsplit=0, 
+                                         xval = 0), 
+                 iter = 1000, nu=1, test.y=test[,32], test.x=test[,-32])
+
+tab_stump<-c()
+for (i in 1:5){
+    tab_stump[i]<-round(mean(booststump$model$errs[nbr_iter[i],3]),3)
+}
+
+niter <- 500
+graph_stump<-1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(stump_train = booststump$model$errs[1:niter, 1],
+         stump_test = booststump$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:3, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Stump", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()+scale_color_manual(values=c("darkred","#526565"))+labs(color="Erreurs")
+```
+
+
+```{r}
+booststump01<- ada(moyenne_facteur~., data= train, type="discrete", loss="exponential",
+                 control = rpart.control(maxdepth =1, cp=-1, minsplit=0, 
+                                         xval = 0,nu=0.1), 
+                 iter = 1000, nu=1, test.y=test[,32], test.x=test[,-32])
+
+tab_stump01<-c()
+for (i in 1:5){
+    tab_stump01[i]<-round(mean(booststump01$model$errs[nbr_iter[i],3]),3)
+}
+
+niter <- 500
+graph_stump01<-1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(stump_train01 = booststump01$model$errs[1:niter, 1],
+         stump_test01 = booststump01$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:3, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Stump avec pénalisation 10%", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()+scale_color_manual(values=c("darkred","#526565"))+labs(color="Erreurs")
+
+ggarrange(graph_stump,graph_stump01,common.legend = T)
+```
+
+Comparé au boosting simple, la différence entre l'erreur en test et l'erreur d'entrainement est très faible pour les stumps. Les deux types d'erreur se situe entre 0,2 et 0,3. Si nous rajoutons une pénalisation de 10 \%, les oscillations d'erreurs sont un peu plus importante et cela jusqu'à 200 itérations. 
+
+### Boosting avec pénalisation
+
+```{r}
+boostpen01 <- ada(moyenne_facteur ~ .,
+  data = train, type = "discrete", loss = "exponential",
+  control = rpart.control(cp = 0), iter = 1000, nu = 0.1, 
+  test.y=test[,32],test.x=test[,-32])
+  
+tab_pen01<-c()
+for (i in 1:5){
+    tab_pen01[i]<-round(mean(boostpen01$model$errs[nbr_iter[i],3]),3)
+}
+
+
+niter <- 1000
+graph_pen01<-1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(pen_train = boostpen01$model$errs[1:niter, 1],
+         pen_test = boostpen01$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:3, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Boost pen 10%", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()+scale_color_manual(values=c("darkred","#526565"))+labs(color="Erreurs")
+
+```
+
+
+```{r}
+boostpen001 <- ada(moyenne_facteur ~ .,
+  data = train, type = "discrete", loss = "exponential",
+  control = rpart.control(cp = 0), iter = 1000, nu = 0.01, 
+  test.y=test[,32],test.x=test[,-32])
+
+tab_pen001<-c()
+for (i in 1:5){
+    tab_pen001[i]<-round(mean(boostpen001$model$errs[nbr_iter[i],3]),3)
+}
+
+
+niter <- 1000
+graph_pen001<-1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(pen001_train = boostpen001$model$errs[1:niter, 1],
+         pen001_test = boostpen001$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:3, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Boost pen 1%", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()+scale_color_manual(values=c("darkred","#526565"))+labs(color="Erreurs")
+
+ggarrange(graph_pen01,graph_pen001,common.legend=T)
+```
+
+En pénalisant le modèle de boosting simple, on voit que les deux courbes des différentes erreurs sont plus proches avec une pénalisation plus faible. Ceci est normal car en pénalisant, on apprend moins vite. On peut également constater que l'erreur est plus basse pour une pénalisation à 1 \% qu'un boosting simple ou un boosting avec une pénalisation à 10 \%.
+
+```{r}
+niter<-1000
+1:niter %>% as_tibble() %>% 
+  rename("iter" = value) %>% 
+  mutate(pen001 = boostpen001$model$errs[1:niter, 3],
+         pen01 = boostpen01$model$errs[1:niter, 3],
+         stump01 = booststump01$model$errs[1:niter, 3],
+         stump = booststump$model$errs[1:niter, 3],
+         boost = boost$model$errs[1:niter, 3]) %>%
+  pivot_longer(cols = 2:6, names_to = "model", values_to = "error") %>%
+  ggplot() + aes(x = iter, y = error, color = model) + geom_line() +
+  labs(title = "Choix meilleur modele", x = "Iterations", y = "Errors") +
+  lims(y = c(0, 0.50))+theme_minimal()
+```
+
+Grâce à ce graphique, on remarque que le modèle boosting sur arbre complet a une erreur qui est plus élevée que les autres. Quand on applique la pénalisation, l'erreur diminue un peu mais elle est toujours plus élevée qu'un boosting avec des stumps. Les deux modèles avec stumps, que ce soit avec ou sans pénalisation, sont quasiment identiques.
+
+Faisons un tableau récapitulatif des erreurs pour un nombre d'itérations défini. Ceci va nous permettre de determiner quel est le meilleur modèle. 
+
+```{r}
+meilleure_erreur<-rbind(tab_boost,tab_stump,tab_stump01,tab_pen01,tab_pen001)
+colnames(meilleure_erreur)<-c(nbr_iter)
+row.names(meilleure_erreur)<-c("Boosting","Stump","Stump pen10%","Boost Pen 10%", "Boost Pen 1%")
+meilleure_erreur %>% tab_fun(title = "Choix du meilleur boosting en fonction de l'erreur en test et du nombre d'iterations")
+```
+
+Avec l'aide de ce tableau récapitulatif et du graphique que nous avons vu auparavant, les deux modèles avec stumps ont une erreur en test plus basse que pour tous les autres modèles à un nombre d'itération donnée. On constate que le meilleur boosting est donc : **Boosting avec stumps et 100 itérations soit une erreur en test de**  `r meilleure_erreur[2,2]`.
+
+```{r}
+best_boost_iter <- 100
+best_penalisation <- 1
+best_boost <- ada(moyenne_facteur~., data= train,
+                  type="discrete", loss="exponential",
+                 control = rpart.control(maxdepth =1, cp=-1, minsplit=0, 
+                                         xval = 0,nu=0.1), 
+                 iter = best_boost_iter, nu=best_penalisation)
+```
+
+## Comparaison des meilleurs modèles
+
+Danc cette dernière sous-partie, nous allons comparer tous nos meilleurs modèles de chaque famille pour determiner notre modèle final. 
+
+```{r}
+#Rcart
+best_tree<-treebis
+#Random forest
+best_rf=best_rf
+#Bagging
+best_bagging=best_bagging
+#Boosting
+best_boosting=best_boost
+```
+
+
+```{r}
+
+s_boosting<-predict(best_boost, type="prob", newdata=test)[,2]
+s_rpart<-predict(treebis, newdata=test)[,2]
+s_random<-predict(best_rf, type="prob", newdata=test)[,2]
+s_bagging<-predict(best_bagging, type="prob", newdata=test)[,2]
+
+s1_boosting<-prediction(s_boosting,test$moyenne_facteur)
+s1_rpart<-prediction(s_rpart,test$moyenne_facteur)
+s1_random<-prediction(s_random,test$moyenne_facteur)
+s1_bagging<-prediction(s_bagging,test$moyenne_facteur)
+
+roc_boosting<-performance(s1_boosting, measure="tpr", x.measure = "fpr")
+roc_rpart<-performance(s1_rpart, measure="tpr", x.measure = "fpr")
+roc_random<-performance(s1_random, measure="tpr", x.measure = "fpr")
+roc_bagging<-performance(s1_bagging, measure="tpr", x.measure = "fpr")
+plot(roc_rpart ,col="green", lwd=1)
+abline(0,1,col="orange")
+plot(roc_random,add=TRUE ,col="black", lwd=1)
+plot(roc_bagging,add=TRUE ,col="blue", lwd=1)
+plot(roc_boosting,add=TRUE ,col="red", lwd=1)
+legend("bottomright",legend=c("rpart", "random", "bagging", "boosting"),
+       col=c("green","black", "blue", "red"),lty=1,lwd=2)
+
+#performance(s1_rpart,"auc")@y.values[[1]]
+#performance(s1_random,"auc")@y.values[[1]]
+#performance(s1_bagging,"auc")@y.values[[1]]
+#performance(s1_boosting,"auc")@y.values[[1]]
+```
+
+
+
+```{r}
+test.data.complete <- test[complete.cases(test), ]
+
+erreurs <- matrix(c(
+  mean(predict(best_tree, newdata = test, type = "class") != test[, 32]),
+  mean(predict(best_tree, newdata = test[test$moyenne_facteur == "< 10", ], type = "class") !=
+       test[test$moyenne_facteur == "< 10", 32]), mean(predict(best_tree, newdata = test[test$moyenne_facteur == "> 10", ], type = "class") !=
+       test[test$moyenne_facteur == "> 10", 32]), performance(s1_rpart,"auc")@y.values[[1]],
+  
+  mean(predict(best_rf, newdata = test.data.complete, type = "class", na.action = na.roughfix)
+     != test.data.complete[, 32]),
+  mean(predict(best_rf, newdata = test.data.complete[test.data.complete$moyenne_facteur == "< 10", ], type = "class") != test.data.complete[test.data.complete$moyenne_facteur == "< 10", 32]),
+  mean(predict(best_rf, newdata = test.data.complete[test.data.complete$moyenne_facteur == "> 10", ], type = "class") != test.data.complete[test.data.complete$moyenne_facteur == "> 10", 32]), performance(s1_random,"auc")@y.values[[1]],
+  
+  mean(predict(best_bagging, newdata = test[, -32]) != test[, 32]),
+  mean(predict(best_bagging, newdata = test.data.complete[test.data.complete$moyenne_facteur == "< 10", ]) != test.data.complete[test.data.complete$moyenne_facteur == "< 10", 32]),
+  mean(predict(best_bagging, newdata = test.data.complete[test.data.complete$moyenne_facteur == "> 10", ]) != test.data.complete[test.data.complete$moyenne_facteur == "> 10", 32]),performance(s1_bagging,"auc")@y.values[[1]],
+  
+  mean(predict(best_boost, newdata = test[, -32]) != test[, 32]),
+  mean(predict(best_boost, newdata = test.data.complete[test.data.complete$moyenne_facteur == "< 10", ]) != test.data.complete[test.data.complete$moyenne_facteur == "< 10", 32]),
+  mean(predict(best_boost, newdata = test.data.complete[test.data.complete$moyenne_facteur == "> 10", ]) != test.data.complete[test.data.complete$moyenne_facteur == "> 10", 32]),performance(s1_boosting,"auc")@y.values[[1]]
+), byrow = TRUE, ncol = 4)
+erreurs<-round(erreurs,3)
+colnames(erreurs) <- c("Erreurs globales", "Erreurs < 10", "Erreur > 10", "AUC")
+rownames(erreurs) <- c("Arbre de décision", "Random forest", "Bagging",  "Boosting")
+
+tab_fun(erreurs, title="Résumé final et choix du modèle")
+
+```
+
+Le meilleur modèle entre toutes les familles de la classification non supervisée est donc le modèle boosting. Il prédit le mieux sur les moyennes basses et c'est celui qui a l'erreur globale la plus faible. Pour les moyennes hautes, c'est le modèle de random forest qui prédit le mieux mais également celui qui prédit le moins bien les moyennes basses.
+Le modèle retenu sera donc boosting avec stumps et 50 itérations.
+
+
+# Entrainement sur notre base complète de départ
+
+Dans cette partie, nous utilisons nos meilleurs modèles (LDA et boosting) sur notre base de données de départ afin d'entrainer au maximum nos modèles et que ceux-ci soient prêts à l'usage afin de prédire les notes de futurs étudiants selon leurs caractéristiques.
+
+```{r}
+best_boost_iter <- 100
+best_penalisation <- 1
+best_boosting_final <- ada(moyenne_facteur~., data= data_nettoye,
+                  type="discrete", loss="exponential",
+                 control = rpart.control(maxdepth =1, cp=-1, minsplit=0, 
+                                         xval = 0,nu=0.1), 
+                 iter = best_boost_iter, nu=best_penalisation)
+
+save(best_boosting_final, file="My_best_model_boosting.RData")
+```
+
+```{r}
+acm <- MCA(data_nettoye[,-c(32)], graph = F, ncp = 55)
+data_acm_final<-as.data.frame(acm$ind$coord)
+data_acm_final$moyenne_facteur <-
+  data_nettoye$moyenne_facteur
+
+lda_finale<-lda(moyenne_facteur~., data=data_acm_final)
+
+save(lda_finale, file="My_best_model_lda.RData")
+```
+
+
+
+# Conclusion
+
+Au final, nos meilleurs modèles pour prédire la moyenne des étudiants sont le boosting et la LDA. Après entrainement de nos deux modèles sur toutes nos données, nous pensons qu'il est mieux de garder le boosting comme modèle à enregistrer pour prédire si dans le futur de nouveaux étudiants veulent savoir leur moyenne en fonction de leurs caractéristiques. En effet, le modèle LDA demande de faire une ACM en amont et utilise seulement les coordonnées des individus. Si dans le futur, nous voulons créer une interface où l'étudiant rentre ses caractéristiques, il ne pourra pas rentrer de coordonnées.
+
+\newpage
+
+# Annexe : 
+
+## MDA
+
+```{r}
+mda_fit <- mda(moyenne_facteur ~., data = data_acm_train)
+res_mda <- predict(mda_fit, newdata = data_acm_test)
+realite_mda <- data_acm_test$moyenne_facteur
+
+tab_fun(table(realite_mda, res_mda), title="Matrice de confusion MDA")
+tab_fun(prop.table(table(realite_mda, res_mda), margin = 1),
+        title="Matrice de confusion (proportions)")
+
+
+mda_prediction <- prediction(c(realite_mda), c(res_mda))
+mda_roc <- performance(mda_prediction, "tpr", "fpr")
+
+mda_roc <- roc(c(realite_mda), c(res_mda))
+ggroc(mda_roc) + ggtitle("Récapitulatif des courbes ROC") +
+  geom_abline(intercept = 1, slope = 1, color="red")+ theme_minimal()
+
+erreur_globale_mda <- round(sum(realite_mda!=res_mda) / length(test_LDA),3)
+
+```
+
+Pour la LDA, on suppose que les classes suivent une distribution normale (Gaussienne), pour la MDA, on va supposer que chaque classe est un mélange gaussien de sous-classes, d'où le nom "mixture discriminante analysis". Toutefois, cette méthode n'a pas été vu en cours et ne peut pas être expliqué très clairement. Nous avons décidé de juste mettre ce modèle en annexe afin de voir si il performe mieux ou pas que LDA et QDA. Le modèle nous donne une erreur globale de `r erreur_globale_mda`. Il ne semble donc pas performer de manière plus efficace que LDA et QDA.
+
+\newpage
+
+## Profondeur arbre random forest
+
+Voici le graphique pour nous aider dans la recherche de la profondeur de l'abre en random forest, dont les résultats étaient très aléatoires.
+
+```{r}
+## choix de profondeur en rf
+errprofrf <- NULL
+profondeur <- c(2, 5, 10, 15, 20, 30, 40, 50)
+i <- 1
+for (k in profondeur) {
+  rfpro <- randomForest(moyenne_facteur ~ .,
+    data = train, method = "class", ntree = 200,
+    parms = list(split = "gini"), maxnodes = k, na.action = na.roughfix, mtry=8
+  )
+  errprofrf[i] <- rfpro$err.rate[200, 1]
+  i <- i + 1
+}
+plot(profondeur, errprofrf, type = "l")
+```
+
+## Arbre de régression
+
+### Un premier arbre
+
+Voici un test d'abre de régression, c'est-à-dire que l'on prédit une variable quantitative (ici notre variable `moyenne`).
+
+```{r}
+data_regression <- data_nettoye[, -32]
+data_regression$moyenne <- data$moyenne
+```
+
+```{r}
+set.seed(1)
+nvar <- ncol(data_regression) - 1
+#creation du dÃ©coupage
+data_split <- data_regression %>% initial_split(prop = 2/3)
+#creation des sous-echantillons apprentissage-test
+test_data <- data_split %>% testing()
+train_data <- data_split %>% training()
+
+
+arbre_max <- rpart.control(cp = 0, max.depth = 0, minbucket = 1, minsplit = 1)
+tree_reg <- rpart(moyenne~. , data=train_data, control=arbre_max, 
+              parms = list(split = "information"))
+#plotcp(tree) ## complexitÃ© de l'arbre
+#tab_fun(head(tree$cp,-10), title="ComplexitÃ©")
+treebis_reg <- prune(tree_reg, cp = 0.009)
+prp(treebis_reg, type=0, extra=1,split.box.col="darkred",
+    cex=0.6,box.palette = c("grey","#526565"),branch.col="black", shadow.col = "grey",split.col="White")
+
+```
+
+
+### Random forest
+
+```{r}
+#registerDoParallel(cores = 3)
+
+#rfGrid <- expand.grid(mtry = c(6, 8, 16))
+#ctrlCv <- trainControl(method = "repeatedcv", repeats = 2, number = 5)
+#rf_caret <- train(moyenne ~ ., data = train_data, method = "rf", 
+#                  trControl = ctrlCv, tuneGrid = rfGrid)
+
+#stopImplicitCluster()
+#rf_caret
+#rf_caret$bestTune
+#rf_caret$finalModel
+```
+
+Le meilleur modèle de random forest pour une regression est donc : 500 arbres et 16 mtry. On a une erreur MSE de 7.45
+
+
+```{r}
+#library(gbm)
+#boost <- gbm(moyenne ~ .,
+#  data = train_data, distribution = "gaussian",
+#  n.trees = 1000, interaction.depth = 4, shrinkage = 1, cv.folds = 5
+#)
+#ntree.opt <- gbm.perf(boost, plot.it = TRUE, method = "cv")
+```
+
+```{r}
+#pred.boost <- predict(boost, test_data, n.trees = ntree.opt)
+#head(pred.boost)
+```
+
+```{r}
+#gbmGrid <- expand.grid(
+#  interaction.depth = (1:5) * 2, n.trees = (1:10) * 25,
+#  shrinkage = c(0.01, 0.05, 0.1), n.minobsinnode = (1:3) * 2
+#)
+#ctrlCv <- trainControl(method = "repeatedcv", repeats = 3)
+```
+
+```{r}
+#registerDoParallel(cores = 7)
+#gbmcaret <- train(moyenne ~ .,
+#  data = train_data, method = "gbm", distribution = "gaussian",
+#  trControl = ctrlCv, tuneGrid = gbmGrid
+#)
+#stopImplicitCluster()
+```
+
+```{r}
+#gbmcaret
+#gbmcaret$bestTune
+#gbmcaret$finalModel
+```
