@@ -1,0 +1,690 @@
+index,Prix,Processeur,RAM,Résolution,Stockage,Systeme_exploitation,Poids,Marque,Coeurs,Taille,Bluetooth,USB,HDMI,Sortie_audio,Caméra,Carte_sd
+0,Entre 250 et 400,Intel Atom,4,1366x768,128,Windows 11,1.35,THOMSON,4,14.1,False,True,True,True,True,True
+1,<250,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,4,14.1,False,True,True,True,True,True
+2,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.64,LENOVO,2,14,False,True,True,True,True,True
+3,<250,Intel Celeron,4,1366x768,32,ChromeOS,1,ASUS,2,11.6,False,True,False,True,True,True
+4,<250,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,4,14.1,False,True,True,True,False,False
+5,Entre 400 et 600,Intel Core i5,8,1920x1080,512,Windows 10,1.2,ACER,4,14,False,True,True,True,True,False
+6,Entre 250 et 400,Intel Celeron,4,1600x900,128,Windows 10,1.64,LENOVO,2,17.3,False,True,True,True,True,True
+7,Entre 400 et 600,Intel Core i5,8,1600x900,512,Windows 10,2.2,LENOVO,4,17.3,False,True,True,True,True,True
+8,<250,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,4,14.1,False,True,True,True,False,False
+9,Entre 250 et 400,AMD Athlon,4,1920x1080,128,Windows 10,1.9,ACER,2,14,False,True,True,True,True,False
+10,Entre 400 et 600,Intel Core i3,8,1366x768,256,Windows 10,1.60,ASUS,2,14,False,False,False,False,False,False
+11,Entre 250 et 400,AMD 3000,4,1366x768,64,Windows 10,1.64,LENOVO,2,14,False,True,True,True,True,True
+12,Entre 250 et 400,Intel Celeron,4,1440x900,128,Windows 10,1.956,THOMSON,4,17.3,False,True,True,True,True,True
+13,Entre 250 et 400,Intel Pentium,4,1920x1080,128,Windows 10,1.64,ASUS,4,14,False,True,True,True,True,False
+14,Entre 250 et 400,Intel Celeron,6,1920x1080,64,Windows 10,1.345,AUTRES,4,15.6,False,False,False,False,False,False
+15,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,2.2,ASUS,4,15.6,False,True,True,True,True,False
+16,Entre 250 et 400,Intel Celeron,8,1366x768,128,Windows 10,1.64,LENOVO,2,15.6,False,True,True,True,False,False
+17,Entre 400 et 600,Intel Core i3,4,1366x768,128,Windows 10,1.78,HP,2,15.6,False,True,True,True,True,True
+18,Entre 250 et 400,Intel Pentium,4,1920x1080,128,Windows 10,1.64,ASUS,4,14,False,True,True,True,True,False
+19,<250,Intel Atom,4,1366x768,64,Windows 10,1.64,THOMSON,4,13.3,False,True,True,True,True,True
+20,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.3,ACER,4,15.6,False,True,True,True,True,False
+21,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.48,HP,6,16.1,False,True,True,True,True,True
+22,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.8,ASUS,4,15.6,False,True,True,True,True,False
+23,Entre 400 et 600,AMD Ryzen,8,1920x1080,512,Windows 10,1.75,HP,6,15.6,False,False,False,False,False,False
+24,Entre 600 et 800,Intel Core i5,16,1920x1080,512,Windows 10,2.3,ASUS,4,15.6,False,True,True,True,True,False
+25,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 10,2.4,LENOVO,6,15.6,False,True,True,True,True,False
+26,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.38,MSI,6,15.6,False,True,True,True,True,False
+27,Entre 400 et 600,Intel Core i5,8,1920x1080,512,Windows 10,1.3,MSI,4,14,False,True,True,True,True,True
+28,Entre 250 et 400,Intel Celeron,4,1366x768,64,ChromeOS,1.2,ASUS,2,14,False,True,False,False,True,True
+29,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.3,ACER,4,15.6,False,True,True,True,True,False
+30,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,2.2,ASUS,4,15.6,False,True,True,True,True,False
+31,Entre 400 et 600,Intel Pentium,8,1920x1080,64,ChromeOS,1.64,ACER,4,14,False,True,False,True,True,True
+32,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Aucun,2,ASUS,4,15.6,False,True,True,True,False,False
+33,Entre 400 et 600,Intel Core i3,8,1920x1080,512,Windows 10,2.05,HP,2,17.3,False,True,True,True,True,False
+34,Entre 600 et 800,Intel Core i5,8,2880x1800,512,Windows 10,1.4,ASUS,4,14,False,True,True,True,True,True
+35,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,1.65,ASUS,4,15.6,False,True,True,True,True,True
+36,Entre 250 et 400,Intel Celeron,6,,64,Windows 10,1.64,NBD,2,14.1,False,True,True,False,False,False
+37,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 10,2.4,LENOVO,6,15.6,False,True,True,True,True,False
+38,Entre 400 et 600,Intel Pentium,8,1920x1080,128,Windows 10,1.64,ACER,4,15.6,False,True,True,True,True,False
+39,Entre 400 et 600,Intel Pentium,8,1920x1080,64,ChromeOS,1.64,HP,4,14,False,True,False,True,True,True
+40,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.48,HP,6,16.1,False,True,True,True,True,True
+42,>1150,Intel Core i7,16,1920x1080,512,DOS,2.1,MSI,8,15.6,False,True,True,True,True,False
+43,Entre 250 et 400,Intel Pentium,4,1920x1080,128,Windows 10,1.64,ASUS,4,14,False,True,True,True,True,False
+44,Entre 250 et 400,Intel Celeron,4,1920x1080,64,ChromeOS,1.64,ACER,2,14,False,True,False,True,True,False
+45,Entre 400 et 600,AMD A9,8,1600x900,512,Windows 10,2.1,ASUS,2,17.3,False,True,True,True,True,True
+46,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2.9,MSI,8,17.3,False,True,True,True,True,False
+47,Entre 400 et 600,Intel Core i3,8,2256x1504,128,ChromeOS,1.45,ACER,2,13.5,False,True,False,True,True,False
+48,Entre 250 et 400,Intel Celeron,6,,256,Windows 10,1.64,NBD,2,14.1,False,True,True,False,False,False
+49,Entre 400 et 600,Intel Core i3,8,1600x900,512,Windows 10,2.3,ASUS,2,17.3,False,True,True,True,True,True
+50,Entre 400 et 600,Intel Core i3,8,1600x900,256,Windows 10,2.08,HP,2,17.3,False,True,True,True,True,False
+51,<250,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,4,13.3,False,True,True,True,True,True
+52,Entre 400 et 600,AMD Ryzen,4,1600x900,256,Windows 10,2.07,HP,4,17.3,False,True,True,True,True,False
+53,Entre 250 et 400,MediaTek,4,1920x1080,64,ChromeOS,1.3,LENOVO,8,14,False,True,False,True,True,True
+54,Entre 400 et 600,AMD A12,8,1600x900,512,Windows 10,2.1,ASUS,4,17.3,False,True,True,True,True,True
+55,Entre 600 et 800,Intel Core i5,16,1920x1080,512,Windows 10,1.2,ACER,4,14,False,True,True,True,True,False
+57,>1150,Intel Core i5,16,1920x1080,512,Windows 10,2,ASUS,4,15.6,False,True,True,True,False,False
+58,<250,Intel Celeron,3,,32,Windows 10,1.64,NBD,2,10.1,False,True,True,False,False,False
+60,Entre 400 et 600,Intel Core i5,4,1536x1024,64,Windows 10,1.11,MICROSOFT,4,12.4,False,True,False,True,True,False
+61,Entre 600 et 800,Intel Core i5,8,1920x1080,256,DOS,2.2,LENOVO,4,15.6,False,True,True,True,True,False
+62,>1150,Intel Core i5,16,1920x1080,512,Windows 10,2.6,MSI,6,17.3,False,True,True,True,True,False
+63,Entre 250 et 400,Intel Celeron,4,1366x768,64,Windows 10,1.64,THOMSON,4,14.1,False,True,True,True,True,True
+64,>1150,Apple M1,16,,1000,MacOS,1.6,APPLE,10,15.6,False,True,True,True,True,True
+65,Entre 250 et 400,Intel Pentium,4,1366x768,64,Windows 10,1.64,LENOVO,4,14,False,True,True,True,True,True
+66,<250,Intel Celeron,3,,32,Windows 10,1.64,NBD,2,10.1,False,True,True,False,False,False
+67,<250,Intel Celeron,3,,32,Windows 10,1.64,NBD,2,10.1,False,True,True,False,False,False
+68,<250,Intel Atom,6,1366x768,128,Windows 10,1.15,KUU,4,13.3,False,True,True,False,False,False
+69,Entre 800 et 1150,Intel Core i7,16,1920x1080,512,Windows 10,1.8,ASUS,4,15.6,False,True,True,True,True,False
+70,Entre 250 et 400,Intel Pentium,4,1920x1080,64,Windows 10,1.3,ACER,4,14,False,True,True,True,True,False
+71,Entre 400 et 600,Intel Celeron,8,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+72,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.50,ASUS,4,14,False,True,True,False,False,True
+73,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2.5,ACER,6,15.6,False,True,True,True,True,False
+74,Entre 400 et 600,Intel Celeron,4,1920x1080,64,ChromeOS,1.64,ACER,2,17.3,False,True,False,True,True,True
+75,Entre 400 et 600,AMD 3000,4,1600x900,256,Windows 10,2.2,LENOVO,2,17.3,False,True,True,True,True,True
+76,Entre 250 et 400,Intel Pentium,4,1920x1080,256,Windows 10,1.64,ACER,4,14,False,False,False,False,False,False
+77,Entre 400 et 600,Intel Celeron,4,1366x768,1000,Windows 10,1.9,ACER,2,15.6,False,True,True,True,True,False
+78,Entre 600 et 800,AMD Ryzen,8,1920x1080,128,Windows 10,1.64,LENOVO,8,15.6,False,True,True,True,True,True
+79,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Aucun,2.60,ASUS,6,17.3,False,True,True,False,False,False
+80,Entre 250 et 400,Intel Celeron,4,1366x768,64,Windows 10,1.64,LENOVO,2,14,False,True,True,True,True,True
+81,>1150,Apple M1,8,2560x1600,512,MacOS,1.29,APPLE,8,13.3,False,True,False,True,True,False
+82,Entre 400 et 600,Intel Core i3,4,1366x768,128,Windows 10,1.78,HP,2,15.6,False,True,True,True,True,True
+83,Entre 600 et 800,Intel Core i5,8,1920x1080,512,DOS,2.75,HP,4,17.3,False,True,True,True,True,True
+84,Entre 600 et 800,Intel Core i5,8,,512,Windows 10,1.64,MSI,4,15.6,False,False,False,False,False,False
+85,>1150,AMD Ryzen,16,2560x1440,512,Windows 10,1.9,ASUS,8,15.6,False,True,True,True,True,True
+87,Entre 250 et 400,AMD 3000,4,1366x768,1000,Windows 10,1.64,LENOVO,2,15.6,False,True,True,True,True,True
+88,Entre 400 et 600,AMD Athlon,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+89,Entre 250 et 400,Intel Celeron,4,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+90,Entre 250 et 400,Intel Celeron,6,,64,Windows 10,1.64,NBD,2,13.3,False,True,True,False,False,False
+91,Entre 800 et 1150,Intel Core i7,16,1920x1080,256,Windows 10,1.64,ASUS,4,17.3,False,True,True,True,True,True
+92,Entre 800 et 1150,Intel Core i7,16,1920x1080,512,Windows 10,1.6,MSI,6,15.6,False,True,True,True,True,True
+93,>1150,Intel Core i7,16,1920x1080,512,DOS,2.6,MSI,8,17.3,False,True,True,True,True,False
+95,Entre 250 et 400,Intel Celeron,8,3000x2000,256,Windows 10,1.10,KUU,2,13.5,False,True,True,False,False,False
+96,Entre 400 et 600,Intel Celeron,4,1280x1040,256,Windows 10,1.64,ACER,4,17.3,False,False,False,False,False,False
+97,Entre 600 et 800,Intel Core i5,16,1920x1080,512,Windows 10,1.64,HP,4,17.3,False,False,False,False,False,False
+101,Entre 250 et 400,Intel Celeron,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+102,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,True,True,True,True,True
+103,Entre 600 et 800,Intel Core i5,8,1600x900,512,Windows 10,2.1,LENOVO,4,17.3,False,True,True,True,True,True
+104,Entre 800 et 1150,Intel Core i5,8,1536x1024,256,Windows 10,1.11,MICROSOFT,4,12.4,False,True,False,True,True,False
+105,Entre 800 et 1150,Intel Core i5,8,1600x900,512,Windows 10,2.1,LENOVO,4,17.3,False,True,True,True,True,True
+106,Entre 250 et 400,AMD 3000,4,1366x768,128,Windows 10,1.85,LENOVO,2,15.6,False,True,True,True,True,True
+107,Entre 800 et 1150,Intel Core i7,16,1920x1080,1000,Windows 10,1.4,ASUS,4,14,False,True,True,True,True,True
+109,>1150,AMD Ryzen,16,1920x1080,512,Windows 10,2.46,HP,8,15.6,False,True,True,True,True,True
+110,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,TOSHIBA,4,15.6,False,False,False,False,False,False
+111,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.46,LENOVO,4,15.6,False,True,True,True,True,False
+112,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 10,1.76,TOSHIBA,4,15.6,False,True,True,True,True,True
+113,>1150,Apple M1,16,2560x1600,512,MacOS,1.4,APPLE,4,13.3,False,True,False,False,True,False
+114,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2,ASUS,4,15.6,False,True,True,True,False,False
+115,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+116,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.2,LENOVO,4,15.6,False,True,True,True,True,False
+117,Entre 400 et 600,Intel Core i3,8,1600x900,256,Windows 10,2.2,LENOVO,2,17.3,False,True,True,True,True,True
+118,Entre 400 et 600,Intel Celeron,8,1600x900,512,Windows 10,1.85,THOMSON,4,17.3,False,True,True,True,True,True
+119,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,2.25,LENOVO,6,15.6,False,True,True,True,True,False
+120,>1150,Apple M1,16,,1000,MacOS,1.6,APPLE,10,15.6,False,True,True,True,True,True
+121,Entre 600 et 800,Intel Core i5,2,1920x1080,1000,Windows 10,1.64,ASUS,4,15.6,False,True,True,False,False,False
+123,Entre 250 et 400,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+124,>1150,Intel Core i7,16,3072x1920,512,MacOS,2,APPLE,6,16,False,True,False,True,True,False
+127,Entre 600 et 800,Intel Core i5,8,1920x1080,256,ChromeOS,1.95,ASUS,4,15.6,False,True,True,False,True,True
+128,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,LENOVO,2,15.6,False,True,True,True,True,True
+133,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.64,AUTRES,4,15.6,False,False,False,False,False,False
+134,Entre 400 et 600,Intel Core i3,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+135,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 10,1.11,ASUS,4,13.3,False,True,True,True,True,True
+136,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,1.64,ASUS,4,15.6,False,True,True,True,False,False
+137,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 11,1.6,MSI,8,15.6,False,True,True,True,True,True
+138,Entre 800 et 1150,AMD Ryzen,16,1920x1080,512,Windows 11,1.6,MSI,8,15.6,False,True,True,True,True,True
+140,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.3,ACER,6,15.6,False,True,True,True,True,False
+141,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.6,LENOVO,4,14,False,True,True,True,True,True
+142,Entre 250 et 400,Intel Pentium,4,1920x1080,128,Windows 10,1.3,ACER,4,14,False,True,True,True,True,False
+143,Entre 800 et 1150,AMD Ryzen,16,1920x1080,512,Windows 10,1.3,ASUS,8,14,False,True,True,True,True,True
+144,Entre 400 et 600,Intel Core i5,4,1920x1080,256,Windows 10,1.64,HP,4,17.3,False,False,False,False,False,False
+145,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+146,>1150,Intel Core i7,16,2560x1600,512,Windows 10,2.26,MSI,8,16,False,True,True,True,True,False
+147,Entre 400 et 600,Intel Pentium,4,1366x768,1000,Windows 10,1.9,ACER,4,15.6,False,True,True,True,True,False
+149,Entre 400 et 600,Intel Pentium,4,1920x1080,64,Windows 10,1.3,ACER,4,14,False,True,True,True,True,False
+153,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.7,LENOVO,4,15.6,False,True,True,True,True,True
+154,>1150,Intel Core i7,16,1920x1080,512,Aucun,2.60,ASUS,8,17.3,False,True,True,False,False,False
+155,>1150,AMD Ryzen,16,1920x1080,512,Windows 10,2.980,LENOVO,8,17.3,False,True,True,True,True,True
+157,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.05,ACER,4,14,False,True,True,True,True,False
+158,>1150,Apple M1,16,2560x1600,256,MacOS,1.4,APPLE,8,13.3,False,True,False,False,True,False
+159,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2.60,ASUS,4,17.3,False,True,True,False,False,False
+161,>1150,Intel Core i5,16,2560x1600,1000,MacOS,1.4,APPLE,4,13.3,False,True,False,True,True,False
+162,Entre 250 et 400,Intel Pentium,4,1366x768,128,Windows 10,1.3,ASUS,4,14,False,True,True,True,True,False
+163,Entre 800 et 1150,Intel Core i5,8,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+164,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,1.86,MSI,6,15.6,False,True,True,True,True,False
+165,Entre 400 et 600,Intel Core i3,4,1600x900,256,Windows 10,1.64,ACER,4,17.3,False,False,False,False,False,False
+166,>1150,Intel Core i5,16,2560x1600,512,MacOS,1.4,APPLE,4,13.3,False,True,False,True,True,False
+167,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.75,HP,4,15.6,False,True,True,True,True,True
+168,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.46,HP,6,16.1,False,True,True,True,True,True
+169,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.38,MSI,8,15.6,False,True,True,True,True,False
+170,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.64,ASUS,6,14,False,False,False,False,False,False
+171,Entre 600 et 800,Intel Core i3,8,1600x900,128,Windows 10,1.64,HP,2,17.3,False,True,True,True,True,False
+172,Entre 400 et 600,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,4,14.1,False,True,True,True,True,True
+173,>1150,AMD Ryzen,16,1920x1080,1000,Aucun,2.3,ASUS,8,15.6,False,True,True,True,False,False
+175,Entre 250 et 400,AMD Athlon,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+176,Entre 600 et 800,Intel Core i5,4,1920x1080,1000,Windows 10,1.78,HP,4,15.6,False,True,True,True,True,True
+177,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.3,ASUS,6,15.6,False,True,True,True,True,False
+178,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+181,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,1.41,HP,4,14,False,True,True,True,True,True
+182,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.7,LENOVO,2,15.6,False,True,True,True,True,True
+185,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.2,ACER,4,17.3,False,True,True,True,True,False
+187,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.32,HP,4,17.3,False,True,True,True,True,True
+189,Entre 600 et 800,AMD Ryzen,4,1366x768,128,Windows 10,1.64,HP,2,15.6,False,True,True,True,True,True
+191,Entre 600 et 800,AMD Athlon,4,1920x1080,64,ChromeOS,1.497,LENOVO,2,13.3,False,True,True,True,True,True
+193,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.8,ASUS,4,15.6,False,True,True,True,True,True
+194,Entre 800 et 1150,Intel Core i5,16,1920x1080,512,Windows 10,2.46,LENOVO,4,15.6,False,True,True,True,True,False
+195,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+196,Entre 600 et 800,Intel Core i5,8,1366x768,256,Windows 10,1.78,HP,4,15.6,False,True,True,True,True,True
+197,Entre 800 et 1150,Intel Core i5,8,1920x1080,256,ChromeOS,1.95,ASUS,4,15.6,False,True,True,False,True,True
+198,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.46,HP,6,16.1,False,True,True,True,True,True
+199,>1150,Apple M1,16,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,False,True,False
+200,>1150,AMD Ryzen,16,,512,Windows 10,1.64,ASUS,4,15.6,False,False,False,False,False,False
+201,>1150,Intel Core i7,16,1920x1080,1024,Windows 10,2.5,ACER,8,15.6,False,True,True,True,True,False
+202,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,0.980,HP,6,15.6,False,True,True,True,True,True
+204,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,0.990,ACER,4,14,False,True,True,True,True,False
+205,Entre 400 et 600,AMD Athlon,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+206,Entre 600 et 800,Intel Core i7,8,1920x1080,512,Windows 10,1.60,ASUS,4,14,False,False,False,False,False,False
+208,Entre 800 et 1150,Intel Core i7,16,,256,Windows 10,1.64,ACER,4,15.6,False,False,False,False,False,False
+209,Entre 400 et 600,Intel Core i3,4,1920x1080,256,Windows 11,1.64,HP,4,15.6,False,False,False,False,False,False
+210,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.9,ACER,4,15.6,False,True,True,True,True,False
+211,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,2.46,HP,6,16.1,False,True,True,True,True,True
+212,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.7,LENOVO,2,15.6,False,True,True,True,True,True
+213,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+214,Entre 600 et 800,Intel Core i5,16,1920x1080,256,Windows 10,1.64,ACER,4,15.6,False,False,False,False,False,False
+216,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 10,1.85,LENOVO,4,15.6,False,True,True,True,False,True
+217,>1150,AMD Ryzen,16,3840x2400,1000,Windows 10,1.3,ASUS,8,13.4,False,True,True,True,True,False
+218,>1150,Intel Core i7,16,2560x1600,1000,Windows 10,2.2,MSI,8,16,False,True,False,True,True,True
+221,Entre 400 et 600,Intel Core i5,4,1920x1080,256,Windows 10,1.85,LENOVO,4,15.6,False,False,False,False,False,False
+222,>1150,Intel Core i7,8,1920x1080,512,Windows 10,1.65,MSI,4,15.6,False,True,True,True,True,True
+223,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,ACER,4,17.3,False,False,False,False,False,False
+225,Entre 800 et 1150,Intel Core i5,16,2256x1504,256,Windows 11,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+226,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.46,HP,4,14,False,True,True,True,True,True
+227,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.64,HP,4,17.3,False,False,False,False,False,False
+228,Entre 600 et 800,Intel Core i3,8,1920x1080,512,Windows 10,1.46,HP,2,14,False,True,True,True,True,True
+231,Entre 800 et 1150,Intel Core i5,8,2256x1504,128,Windows 10,1.64,MICROSOFT,4,13.5,False,True,False,True,True,False
+232,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.29,MSI,4,14,False,True,False,True,True,True
+233,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,ACER,4,14,False,False,False,False,False,False
+234,>1150,Intel Core i7,8,1920x1080,512,Windows 10,1.6,MSI,6,15.6,False,True,True,True,True,True
+237,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 10,0.980,HP,6,15.6,False,True,True,True,True,True
+239,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2,ASUS,4,15.6,False,True,True,True,False,False
+240,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 11,1.64,HP,4,15.6,False,False,False,False,False,False
+241,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.9,MSI,8,17.3,False,True,True,True,True,True
+242,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.75,HP,6,15.6,False,True,True,True,True,True
+243,Entre 600 et 800,Intel Core i3,8,,256,Windows 10,1.64,ASUS,2,17.3,False,True,True,True,True,True
+244,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,2.3,ASUS,6,15.6,False,True,True,True,True,False
+245,>1150,Intel Core i5,16,1920x1080,512,Windows 11,2,ASUS,4,15.6,False,True,True,True,False,False
+247,Entre 400 et 600,Intel Core i3,4,1366x768,1000,Windows 10,1.9,ACER,2,15.6,False,True,True,True,True,False
+248,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2.33,MSI,6,15.6,False,True,True,True,True,True
+251,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+256,Entre 600 et 800,Intel Core i5,8,1920x1080,256,ChromeOS,1.5,HP,4,14,False,True,True,True,True,True
+258,>1150,AMD Ryzen,16,1920x1080,1000,Windows 10,2.48,HP,6,15.6,False,True,True,True,True,True
+259,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.29,LENOVO,4,13.3,False,True,True,True,True,True
+261,Entre 600 et 800,AMD Ryzen,8,1920x1080,256,Windows 11,1.64,ACER,4,15.6,False,True,True,True,True,False
+263,Entre 400 et 600,Intel Core i3,8,1600x900,256,Windows 10,1.64,LENOVO,4,17.3,False,False,False,False,False,False
+265,Entre 400 et 600,Intel Core i3,4,1920x1080,64,ChromeOS,1.5,HP,2,14,False,True,True,True,True,True
+267,>1150,Intel Core i5,8,2048.1536,512,Windows 11,0.999,LENOVO,4,13.3,False,True,False,False,True,False
+268,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 11,2,TOSHIBA,4,15.6,False,True,True,True,True,True
+269,Entre 800 et 1150,Intel Core i5,16,1920x1080,256,Windows 11,1.64,HP,4,15.6,False,False,False,False,False,False
+272,>1150,AMD Ryzen,2,2560x1440,1000,Windows 10,1.64,ASUS,4,14,False,False,False,False,False,False
+273,>1150,Intel Core i7,16,1920x1080,512,Windows 11,2.07,LENOVO,6,15.6,False,True,True,True,True,True
+275,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+276,>1150,Apple M1,16,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,False,True,False
+277,>1150,AMD Ryzen,16,1920x1080,1000,Windows 10,2.7,ASUS,8,17.3,False,True,True,True,False,False
+279,>1150,AMD Ryzen,16,1920x1080,1000,Windows 10,2.46,HP,8,15.6,False,True,True,True,True,True
+281,>1150,Intel Core i5,8,1920x1080,256,Windows 11,1.4,DELL,4,14,False,True,True,True,True,True
+283,>1150,AMD Ryzen,16,1920x1080,512,Windows 10,2.3,ASUS,8,15.6,False,True,True,True,False,False
+284,Entre 800 et 1150,Intel Core i5,8,1366x768,256,Windows 11,1.41,LENOVO,2,11.6,False,True,True,True,True,True
+287,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 11,1.64,HP,4,17.3,False,False,False,False,False,False
+289,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+291,>1150,Intel Core i7,16,3840x2400,1000,Windows 11,1.95,ASUS,4,16,False,False,False,False,False,False
+292,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.64,HP,4,14,False,False,False,False,False,False
+293,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 10,1.5,ASUS,4,14,False,True,True,True,True,True
+294,>1150,Intel Core i7,16,3840x2160,1000,Windows 11,2.1,MSI,8,15.6,False,True,True,True,True,True
+297,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.29,MSI,4,14,False,True,False,True,True,True
+298,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.01,RAZER,8,15.6,False,True,True,True,True,True
+299,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+300,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+302,>1150,AMD Ryzen,16,1920x1080,512,Windows 10,1.9,MSI,8,15.6,False,True,True,True,True,False
+303,Entre 600 et 800,Intel Core i3,8,1920x1080,256,Windows 11,1.64,LENOVO,2,14,False,True,True,True,True,False
+304,>1150,Intel Core i5,8,1920x1080,256,Windows 11,1.36,LENOVO,4,14,False,True,True,True,True,False
+305,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+306,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+307,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+308,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.3,MSI,4,14,False,True,True,True,True,True
+309,Entre 600 et 800,Intel Core i5,16,1920x1080,512,Windows 10,1.6,MSI,4,15.6,False,True,True,True,True,True
+310,Entre 250 et 400,Intel Celeron,4,1366x768,128,Windows 10,1.64,LENOVO,2,14,False,True,True,True,True,True
+311,Entre 600 et 800,Intel Core i5,8,1600x900,256,Windows 10,1.64,LENOVO,4,17.3,False,False,False,False,False,False
+312,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+313,Entre 400 et 600,Intel Core i3,4,1366x768,128,Windows 10,1.78,HP,2,15.6,False,True,True,True,True,True
+314,Entre 400 et 600,Intel Core i5,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+316,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+317,Entre 600 et 800,Intel Core i3,8,1920x1080,256,Windows 11,2.36,HP,2,17.3,False,True,True,True,True,True
+318,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.8,ACER,4,15.6,False,True,True,True,True,True
+319,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+320,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+321,>1150,Intel Core i7,16,3840x2160,1000,Windows 10,2.9,MSI,8,17.3,False,True,True,True,True,True
+322,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 10,1.6,MSI,4,15.6,False,True,True,True,True,True
+323,Entre 400 et 600,AMD Ryzen,4,1920x1080,256,Windows 10,1.9,ACER,2,15.6,False,True,True,True,True,False
+325,>1150,Intel Core i7,16,2560x1440,1000,Windows 11,2.38,MSI,8,15.6,False,True,True,True,True,True
+326,>1150,Apple M1,16,2560x1600,2000,MacOS,1.4,APPLE,4,13.3,False,True,False,False,True,False
+327,Entre 800 et 1150,Intel Core i5,8,2256x1504,128,Windows 11,1.265,MICROSOFT,4,13.5,False,True,False,True,True,False
+328,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+329,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+330,Entre 800 et 1150,Intel Core i5,8,1920x1080,64,ChromeOS,1.5,HP,4,14,False,True,True,True,True,True
+331,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2,ASUS,4,15.6,False,True,True,True,False,False
+332,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+333,>1150,Intel Core i7,16,2560x1440,1000,Windows 10,2.38,MSI,8,15.6,False,True,True,True,True,True
+334,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 11,0.980,ACER,4,14,False,True,True,True,True,False
+335,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+340,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+343,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+344,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2,ASUS,4,15.6,False,True,True,True,False,False
+346,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+347,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+349,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+351,>1150,Apple M1,16,2560x1600,512,MacOS,1.29,APPLE,4,13.3,False,True,False,False,True,False
+353,Entre 400 et 600,Intel Pentium,8,1920x1080,32,ChromeOS,1.4,ASUS,4,15.6,False,True,False,True,True,True
+354,>1150,Apple M1,16,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,False,True,False
+355,Entre 600 et 800,Intel Core i3,8,1920x1280,128,Windows 11,0.553,MICROSOFT,2,10.5,False,True,False,True,True,True
+356,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+359,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+361,>1150,Intel Core i7,16,1920x1080,512,Windows 11,2.2,ACER,6,15.6,False,True,True,True,True,True
+362,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.1,MSI,8,15.6,False,True,True,True,True,False
+363,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.41,RAZER,4,13.3,False,True,False,True,True,False
+366,Entre 800 et 1150,Intel Core i5,8,1920x1080,64,ChromeOS,1.5,HP,4,14,False,True,True,True,True,True
+367,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+369,Entre 600 et 800,Intel Core i3,4,1920x1080,256,Windows 10,1.64,ASUS,4,15.6,False,False,False,False,False,False
+370,>1150,Intel Core i7,16,2560x1440,1000,Windows 11,2.1,MSI,8,15.6,False,True,True,True,True,False
+371,Entre 800 et 1150,Intel Core i7,8,1920x1080,256,Windows 11,1.8,ACER,4,15.6,False,True,True,True,True,True
+372,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+373,Entre 600 et 800,Intel Core i3,8,1920x1080,32,ChromeOS,1.6,ACER,2,14,False,True,False,True,True,True
+374,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+375,Entre 800 et 1150,AMD Ryzen,4,1920x1080,128,ChromeOS,1.497,LENOVO,2,13.3,False,True,True,True,True,True
+379,Entre 800 et 1150,Intel Core i5,8,2256x1504,256,Windows 10,1.64,MICROSOFT,4,13.5,False,True,False,True,True,False
+381,>1150,Intel Core i5,16,1920x1080,1000,Windows 10,2.1,MSI,6,15.6,False,True,True,True,True,False
+382,Entre 800 et 1150,Apple M1,8,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,True,True,False
+385,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 10,2.25,LENOVO,6,15.6,False,True,True,True,True,False
+386,Entre 600 et 800,Intel Core i3,8,1920x1080,256,Windows 10,1.64,ACER,4,15.6,False,False,False,False,False,False
+390,Entre 250 et 400,AMD Athlon,4,1920x1080,256,Windows 10,1.64,HP,4,15.6,False,False,False,False,False,False
+391,Entre 800 et 1150,Intel Core i5,8,1920x1080,256,Windows 11,1.6,ACER,4,14,False,True,True,True,True,True
+393,Entre 400 et 600,AMD Ryzen,8,1920x1080,512,Windows 10,1.69,HP,6,15.6,False,True,True,True,True,True
+394,Entre 400 et 600,AMD A4,4,1920x1080,32,ChromeOS,1.64,LENOVO,2,14,False,True,False,True,True,True
+395,Entre 600 et 800,AMD Ryzen,8,,256,Windows 10,1.64,ACER,4,15.6,False,False,False,False,False,False
+396,Entre 250 et 400,Intel Celeron,6,1920x1080,256,Windows 10,1.64,KUU,4,15.6,False,False,False,False,False,False
+397,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+399,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+400,>1150,Intel Core i7,16,1920x1080,512,Windows 11,2.2,ACER,6,15.6,False,True,True,True,True,False
+403,Entre 800 et 1150,Apple M1,8,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,True,True,False
+404,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+405,Entre 400 et 600,Intel Core i3,4,1920x1080,128,Windows 10,1.5,ACER,2,14,False,True,True,True,True,True
+409,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+412,>1150,Intel Core i7,16,1920x1080,256,ChromeOS,1.14,ASUS,4,14,False,True,False,True,True,True
+413,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.01,RAZER,8,15.6,False,True,True,True,True,True
+416,>1150,Intel Core i7,64,1920x1200,1000,Windows 11,2.39,ASUS,6,17,False,True,True,True,True,True
+417,>1150,Intel Core i7,16,1920x1080,1000,Windows 11,2.45,MSI,8,17.3,False,True,True,True,True,True
+419,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+420,>1150,Intel Core i7,16,2560x1440,1000,Windows 10,1.99,RAZER,8,15.6,False,True,True,True,True,True
+421,Entre 800 et 1150,Intel Core i7,8,1920x1080,256,Windows 11,1.64,LENOVO,4,14,False,True,True,True,True,False
+422,>1150,Intel Core i7,16,3840x2160,1000,Windows 11,3.5,LENOVO,8,17.3,False,True,True,True,True,True
+423,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,HP,4,14,False,False,False,False,False,False
+424,>1150,Intel Core i5,8,1920x1080,256,Windows 10,2.5,ACER,4,15.6,False,True,True,True,True,True
+425,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+427,>1150,Intel Core i7,16,1920x1080,256,Windows 10,1.64,ASUS,4,15.6,False,False,False,False,False,False
+429,Entre 400 et 600,AMD Radeon,8,,256,Windows 10,1.64,HP,4,14,False,False,False,False,False,False
+430,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+431,>1150,Intel Core i7,8,1920x1080,256,Windows 11,1.75,HP,4,15.6,False,True,True,True,True,True
+433,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.75,RAZER,8,17.3,False,True,True,True,True,True
+434,Entre 400 et 600,Intel Core i3,4,1920x1280,64,Windows 11,0.544,MICROSOFT,2,10.5,False,True,False,True,True,True
+436,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+437,Entre 800 et 1150,Intel Core i5,8,1920x1080,64,ChromeOS,1.6,HP,4,14,False,True,False,True,True,True
+440,Entre 800 et 1150,Intel Core i5,8,2256x1504,256,Windows 11,1.265,MICROSOFT,4,13.5,False,True,False,True,True,False
+443,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.4,ACER,4,14,False,True,True,False,True,True
+445,Entre 250 et 400,Intel Celeron,8,1920x1080,2000,Windows 10,1.93,THOMSON,4,15.6,False,True,True,True,True,True
+446,>1150,Apple M1,8,2560x1600,512,MacOS,1.29,APPLE,8,13.3,False,True,False,True,True,False
+447,Entre 800 et 1150,Intel Core i7,8,1920x1080,256,Windows 11,1.8,ACER,4,15.6,False,True,True,True,True,True
+448,>1150,Intel Core i7,16,1920x1080,512,Windows 10,2.07,RAZER,6,15.6,False,True,True,True,True,False
+450,>1150,Intel Core i7,16,3840x2160,512,Windows 11,2.1,ACER,6,15.6,False,True,True,True,True,False
+451,Entre 600 et 800,AMD Radeon,8,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+455,>1150,Intel Core i7,16,2560x1440,1000,Windows 10,2.75,RAZER,8,17.3,False,True,True,True,True,True
+456,>1150,Intel Core i5,8,1920x1080,512,Windows 11,0.9809,TOSHIBA,4,13.3,False,True,True,True,True,True
+457,>1150,Intel Core i7,16,,256,Windows 10,1.64,RAZER,8,15.6,False,False,False,False,False,False
+458,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+460,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+463,Entre 250 et 400,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+468,>1150,Intel Core i7,16,3840x2160,512,Windows 11,2.1,ACER,6,15.6,False,True,True,True,True,False
+471,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,2.75,RAZER,8,17.3,False,True,True,True,True,True
+476,>1150,Apple M1,16,2560x1600,1000,MacOS,1.29,APPLE,4,13.3,False,True,False,False,True,False
+478,>1150,Intel Core i7,16,2256x1504,1000,Windows 11,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+479,>1150,Intel Core i5,8,1920x1080,256,Windows 11,1.05,TOSHIBA,4,13.3,False,True,True,True,True,True
+482,Entre 600 et 800,Intel Core i3,8,2256x1504,64,ChromeOS,1.45,ACER,2,13.5,False,True,True,True,True,False
+485,Entre 800 et 1150,Apple M1,8,2560x1600,256,MacOS,1.29,APPLE,8,13.3,False,True,False,True,True,False
+486,>1150,Intel Core i5,8,1920x1080,512,Windows 11,1.4,TOSHIBA,4,14,False,True,True,True,True,True
+488,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+490,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+491,Entre 250 et 400,Intel Celeron,4,1366x768,128,Windows 10,1.5,THOMSON,4,15.6,False,True,True,True,True,True
+492,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+495,Entre 600 et 800,AMD 3000,4,1600x900,1000,Windows 10,2.2,LENOVO,2,17.3,False,True,True,True,True,True
+496,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+499,>1150,Intel Core i5,8,1920x1080,256,Windows 11,0.870,TOSHIBA,4,13.3,False,True,True,True,True,True
+502,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+503,Entre 600 et 800,AMD Ryzen,8,1920x1080,256,Windows 10,1.8,ACER,6,15.6,False,True,True,True,True,False
+504,Entre 250 et 400,Intel Celeron,4,1366x768,32,ChromeOS,1.2,ASUS,2,11.6,False,True,False,True,True,True
+506,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.8,ACER,4,15.6,False,True,True,True,True,True
+507,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 10,1.6,MSI,4,15.6,False,True,True,True,True,True
+508,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+513,>1150,Intel Core i5,8,1920x1080,256,Windows 11,0.906,TOSHIBA,4,13.3,False,True,True,True,True,True
+515,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.2,TOSHIBA,4,13.3,False,True,True,True,True,True
+516,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+519,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+521,>1150,Intel Core i5,8,1920x1080,512,Windows 11,0.906,TOSHIBA,4,13.3,False,True,True,True,True,True
+524,Entre 800 et 1150,Intel Core i5,8,2256x1504,256,Windows 11,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+525,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+526,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.79,HP,6,15.6,False,True,False,True,True,True
+528,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 11,1.6,MSI,6,15.6,False,True,True,True,True,True
+529,>1150,Intel Core i5,8,2496x1664,256,Windows 11,1.542,MICROSOFT,4,15,False,True,False,True,True,False
+531,>1150,Intel Pentium,4,1920x1080,64,Windows 10,1.3,ACER,4,14,False,True,True,True,True,False
+534,>1150,AMD Ryzen,16,1920x1080,1000,Aucun,2.3,ASUS,8,15.6,False,True,True,True,False,False
+535,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+536,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+537,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+538,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.64,ASUS,2,14,False,True,True,True,True,True
+543,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+545,Entre 800 et 1150,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,AUTRES,6,15.6,False,False,False,False,False,False
+548,Entre 400 et 600,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+551,Entre 400 et 600,AMD 3000,8,1366x768,256,Windows 10,1.64,LENOVO,2,15.6,False,True,True,True,False,True
+552,Entre 400 et 600,Intel Core Gemini,16,2160x1440,256,Windows 10,1.64,AUTRES,4,15.6,False,False,False,False,False,False
+553,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+555,Entre 400 et 600,Intel Pentium,8,1920x1080,64,ChromeOS,1.5,ACER,4,14,False,True,False,True,True,True
+558,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+559,Entre 800 et 1150,Intel Core i5,8,2256x1504,1024,Windows 11,1.2,ACER,4,13.5,False,True,True,True,True,True
+562,Entre 800 et 1150,Intel Core i5,8,2256x1504,256,Windows 11,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+563,Entre 250 et 400,Intel Celeron,8,,256,Windows 10,1.64,THOMSON,4,15.6,False,False,False,False,False,False
+565,Entre 600 et 800,Intel Core i5,8,1536x1024,256,Windows 10,1.11,MICROSOFT,4,12.4,False,True,False,True,True,False
+567,Entre 250 et 400,Intel Atom,4,1366x768,64,Windows 10,1.64,AUTRES,4,11.6,False,True,True,True,True,True
+569,>1150,Intel Core i5,16,1920x1080,512,Windows 10,2.6,MSI,6,17.3,False,True,True,True,True,False
+572,>1150,Intel Core i5,8,1920x1080,128,Windows 10,1.64,LENOVO,4,15.6,False,True,True,True,True,False
+573,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.3,ACER,2,14,False,True,True,True,True,False
+575,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+576,>1150,Intel Core i7,16,1920x1080,1000,Windows 11,1.29,MSI,4,14,False,True,False,True,True,False
+577,Entre 800 et 1150,AMD Ryzen,8,1600x900,128,Windows 10,1.64,LENOVO,4,17.3,False,True,True,True,True,True
+578,Entre 400 et 600,Intel Celeron,4,1920x1080,64,Windows 10,1.5,AUTRES,2,14,False,True,True,False,True,True
+580,Entre 400 et 600,Intel Core i3,4,1366x768,128,Windows 10,1.42,THOMSON,2,14.1,False,True,True,True,True,True
+583,>1150,AMD Ryzen,16,1920x1080,512,Windows 10,2.6,ASUS,8,17.3,False,True,True,True,True,False
+584,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.28,HP,4,13.3,False,True,True,True,True,True
+585,>1150,Intel Core i9,16,3072x1920,1000,MacOS,2,APPLE,8,16,False,True,False,True,True,False
+591,>1150,Intel Core i7,8,1920x1080,256,Windows 11,1.89,HP,6,15.6,False,True,True,True,True,False
+595,>1150,Intel Core i7,16,1920x1080,512,Windows 11,1.23,HP,4,13.3,False,True,True,True,True,False
+597,Entre 800 et 1150,Intel Core i5,8,1536x1024,256,Windows 11,1.11,MICROSOFT,4,12.4,False,True,False,True,True,False
+599,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+604,>1150,Intel Celeron,4,1920x1080,32,Windows 10,1.64,AUTRES,2,14.1,False,True,True,True,True,True
+611,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.64,LENOVO,4,15.6,False,True,True,True,True,True
+614,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+615,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+619,Entre 400 et 600,AMD Ryzen,4,1366x768,1000,Windows 10,1.74,HP,2,15.6,False,True,True,True,True,True
+620,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+621,Entre 250 et 400,Intel Celeron,4,1366x768,64,ChromeOS,1.51,ASUS,2,14,False,True,False,True,True,True
+625,Entre 250 et 400,Snapdragon,4,1920x1080,64,Windows 10,1.64,THOMSON,4,13,False,True,False,True,True,True
+630,Entre 400 et 600,Intel Atom,4,1920x1080,64,Windows 10,1.48,AUTRES,4,14.1,False,True,True,True,True,True
+631,Entre 400 et 600,Intel Pentium,4,1920x1280,64,Windows 11,0.544,MICROSOFT,2,10.5,False,True,False,True,True,True
+633,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+635,Entre 400 et 600,AMD Athlon,8,1920x1080,480,Windows 10,1.3,AUTRES,4,14,False,True,True,False,True,True
+643,Entre 600 et 800,Intel Core i5,8,1536x1024,256,Windows 10,1.11,MICROSOFT,4,12.4,False,True,False,True,True,False
+647,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+649,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.64,ASUS,6,15.6,False,True,True,True,True,True
+653,Entre 400 et 600,Intel Celeron,3,1920x1080,32,Windows 10,1.5,AUTRES,2,13.3,False,True,True,False,True,False
+656,Entre 400 et 600,Intel Atom,4,1280x800,128,Windows 10,1.64,ASUS,4,10.1,False,True,True,True,True,True
+658,Entre 600 et 800,AMD Ryzen,16,1920x1080,512,Windows 10,1.88,AUTRES,4,15.6,False,True,False,False,False,False
+660,Entre 800 et 1150,Intel Core i5,8,1920x1080,64,ChromeOS,1.44,ASUS,2,14,False,True,False,True,True,True
+664,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+666,Entre 400 et 600,AMD Athlon,4,1600x900,1000,Windows 10,2.49,HP,2,17.3,False,True,True,True,True,False
+676,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 10,1.05,ACER,4,14,False,True,True,True,True,False
+684,Entre 600 et 800,Intel Core i5,8,2160x1440,512,Windows 10,1.53,AUTRES,4,14,False,True,True,True,True,False
+686,Entre 600 et 800,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+695,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+696,Entre 600 et 800,Intel Pentium,4,1920x1080,256,Windows 10,1.3,ACER,4,14,False,True,True,True,True,True
+697,Entre 400 et 600,Intel Core Gemini,8,1920x1080,256,Windows 10,1.64,AUTRES,4,14.1,False,False,False,False,False,False
+707,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 10,1.9,ACER,4,15.6,False,True,True,True,True,False
+714,>1150,Intel Core i5,8,2256x1504,512,Windows 10,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+721,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.74,HP,4,15.6,False,True,True,True,True,True
+731,>1150,Intel Core i7,16,2256x1504,512,Windows 10,1.288,MICROSOFT,4,13.5,False,True,False,True,True,False
+733,Entre 800 et 1150,AMD Ryzen,8,2256x1504,256,Windows 10,1.265,MICROSOFT,6,13.5,False,True,False,True,True,False
+740,Entre 400 et 600,Intel Core i3,4,1920x1080,256,Windows 10,1.9,ACER,2,15.6,False,True,True,True,True,False
+751,Entre 600 et 800,Intel Core i3,8,1920x1080,32,ChromeOS,1.5,ASUS,2,14,False,True,False,True,True,True
+758,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+761,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+765,Entre 400 et 600,Intel Core i5,4,1366x768,1000,Windows 10,1.9,ACER,4,15.6,False,True,True,True,True,False
+775,Entre 400 et 600,AMD Athlon,8,1920x1080,256,Windows 10,1.3,AUTRES,4,14,False,True,True,False,True,True
+776,>1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,15.6,False,False,False,False,False,False
+777,Entre 250 et 400,Intel Pentium,8,,256,Windows 10,1.64,AUTRES,4,15.6,False,False,False,False,False,False
+0,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.53,AUTRES,1,15,True,True,False,False,False,False
+1,Entre 250 et 400,MediaTek,4,,256,ChromeOS,1.05,ACER,8,11.6,False,True,False,False,True,False
+2,<250,Intel Celeron,4,1366x768,64,Windows 10,1.35,THOMSON,1,14.1,True,True,True,False,False,True
+3,Entre 400 et 600,Intel Core i3,4,,1000,Windows 10,2.410,HP,2,17.3,True,True,True,False,False,False
+4,Entre 250 et 400,Intel Celeron,64,1366x768,128,Windows 10,1.35,THOMSON,1,14.1,True,True,True,False,True,False
+5,Entre 400 et 600,AMD Ryzen,8,1920x1080,512,Windows 10,1.750,HP,6,15.6,True,True,True,False,False,False
+6,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,DELL,1,15.6,True,True,True,False,True,False
+7,Entre 250 et 400,Intel Pentium,4,1920x1080,128,Windows 10,1.3,ACER,1,14,False,True,False,False,False,False
+8,Entre 250 et 400,Intel Celeron,4,1366x768,128,Windows 10,1.5,THOMSON,1,15.6,True,True,True,False,False,True
+9,Entre 250 et 400,Intel Celeron,6,1920x1080,128,Windows 10,1.88,TECLAST,2,15.6,True,True,True,False,False,False
+10,Entre 250 et 400,Intel Celeron,4,1366x768,256,Windows 10,1.740,HP,2,15.6,True,True,True,False,False,False
+11,Entre 250 et 400,Intel Celeron,8,1920x1080,512,Windows 11,2,AUTRES,1,16.6,False,True,True,False,False,False
+12,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.6,ASUS,4,14,True,True,True,False,False,True
+13,Entre 250 et 400,Intel Celeron,4,,256,Windows 10,1.64,NBD,2,14,False,True,True,False,False,True
+14,Entre 400 et 600,Intel Celeron,8,1600x900,256,ChromeOS,2.42,ASUS,2,17.3,True,True,False,False,False,True
+15,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,1.65,LENOVO,4,17.3,False,True,False,False,False,False
+16,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.82,TECLAST,4,15.6,False,True,True,False,False,True
+17,Entre 250 et 400,Intel Celeron,8,2160x1440,256,Windows 10,1.28,AUTRES,4,13,True,True,False,False,False,False
+18,Entre 250 et 400,Intel Celeron,4,,256,ChromeOS,1.4,LENOVO,2,14,True,True,False,False,True,True
+19,<250,Intel Celeron,4,1920x1080,64,Windows 10,1.23,AUTRES,2,13.3,False,True,True,False,False,False
+20,Entre 800 et 1150,Intel Core i7,16,1920x1080,512,Windows 10,1.300,HP,4,13.3,True,True,False,False,False,False
+21,Entre 250 et 400,Intel Celeron,8,1366x768,2000,Windows 10,1.64,THOMSON,1,15.6,False,True,True,False,False,True
+22,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.8,TECLAST,4,15.6,True,True,True,False,False,False
+23,Entre 600 et 800,Intel Core i5,8,,128,Windows 10,1.1,MICROSOFT,4,12.45,False,True,False,False,False,False
+24,Entre 600 et 800,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,ACER,4,15.6,False,True,True,False,False,False
+25,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.400,AUTRES,2,13.3,True,True,True,False,False,True
+27,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.8,ASUS,4,15.6,True,True,True,False,False,True
+28,Entre 600 et 800,Intel Core i5,8,1920x1080,256,ChromeOS,1.89,ASUS,4,15.6,True,True,True,False,False,True
+29,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 10,1.8,TECLAST,4,15.6,False,True,True,False,False,False
+30,Entre 250 et 400,Intel Celeron,4,,256,ChromeOS,1.4,LENOVO,2,14,True,True,False,False,True,True
+31,<250,Intel Celeron,4,1920x1080,64,Windows 10,1.23,AUTRES,2,13.3,False,True,True,False,False,False
+32,Entre 400 et 600,Intel Core i3,4,1920x1080,256,Windows 11,1.64,LENOVO,2,15.6,False,True,False,False,False,False
+33,>1150,Intel Core i7,16,3840x2160,256,Windows 10,1.65,ASUS,4,15.6,True,True,True,False,False,True
+34,Entre 600 et 800,AMD Ryzen,8,1920x1080,256,Windows 10,1.64,ACER,4,15.6,False,True,True,False,False,False
+35,>1150,Intel Core i5,8,1920x1080,256,Windows 10,1.64,DELL,6,15.6,True,True,True,False,False,False
+36,Entre 250 et 400,Intel Celeron,6,1920x1080,128,Windows 10,1.8,TECLAST,4,15.6,False,True,True,False,False,False
+37,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.400,AUTRES,2,13.3,True,True,True,False,False,True
+38,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 10,1.5,TECLAST,2,14.1,True,True,True,False,False,True
+39,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.82,TECLAST,4,15.6,False,True,True,False,False,True
+40,<250,Intel Atom,2,1280x800,32,Windows 10,1.64,AUTRES,4,10.1,False,True,True,False,False,False
+41,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.85,LENOVO,2,15.6,False,True,True,False,True,False
+42,Entre 250 et 400,Intel Celeron,4,1366x768,128,Windows 10,1.64,AUTRES,2,11.6,False,True,True,False,False,True
+43,Entre 250 et 400,Intel Celeron,4,1600x900,128,Windows 10,2,THOMSON,1,17.3,False,True,False,False,False,False
+45,Entre 400 et 600,AMD Ryzen,8,,256,Windows 10,2.9,HP,4,17.3,True,True,True,False,False,False
+46,Entre 400 et 600,Intel Celeron,4,,256,Windows 11,1.64,HP,1,17.3,False,True,False,False,False,False
+47,Entre 250 et 400,Intel Core i9,4,1920x1080,64,Windows 10,1.3,AUTRES,1,14,True,True,True,False,False,False
+48,<250,Intel Celeron,6,1920x1080,256,Windows 11,1.420,AUTRES,2,14.1,False,True,True,False,False,False
+49,Entre 600 et 800,Intel Celeron,2,1920x1080,512,Windows 11,1.64,ASUS,4,15.6,True,False,False,False,True,False
+50,Entre 400 et 600,Intel Celeron,8,2160x1440,8,Windows 10,1.5,AUTRES,4,14,True,True,False,False,False,True
+51,Entre 250 et 400,Intel Xeon,4,1920x1080,256,Windows 10,1.64,LENOVO,2,14,False,True,False,False,True,False
+52,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.400,AUTRES,2,14,False,True,True,False,False,False
+53,Entre 800 et 1150,Intel Core i5,8,,512,Windows 10,2.7,ACER,4,17.3,False,True,False,False,False,False
+54,>1150,AMD Ryzen,16,,256,Windows 10,2.980,LENOVO,8,17.3,False,True,False,False,False,False
+55,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.3,TECLAST,4,14.1,True,True,True,False,False,False
+56,Entre 600 et 800,Intel Core i3,8,,256,Windows 11,1.5,LENOVO,2,14,False,True,False,False,True,False
+57,>1150,Intel Core i7,16,3840x2160,1000,Windows 10,1.920,HP,6,15.6,True,False,True,False,False,False
+58,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.6,LENOVO,2,14,False,True,True,False,False,False
+59,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,2.14,ASUS,4,15.6,True,True,True,False,False,True
+60,Entre 250 et 400,Intel Celeron,4,1920x1080,4,Windows 10,1.45,NBD,2,14.1,False,False,False,False,False,True
+61,>1150,Intel Celeron,8,1920x1080,512,Windows 10,1.64,AUTRES,8,17.3,False,False,False,False,False,False
+63,Entre 600 et 800,Intel Core i5,8,1920x1080,512,Windows 10,2.14,ASUS,4,15.6,True,True,True,False,False,True
+64,Entre 400 et 600,Intel Celeron,8,2160x1440,8,Windows 10,1.5,AUTRES,4,14,True,True,False,False,False,True
+65,Entre 400 et 600,AMD Ryzen,8,,256,Windows 10,2.9,HP,4,17.3,True,True,True,False,False,False
+66,Entre 250 et 400,Intel Celeron,8,,500,Windows 11,1.64,LENOVO,2,12.5,True,True,False,False,False,False
+67,Entre 250 et 400,Intel Celeron,6,1200x1920,128,Windows 10,1.64,AUTRES,1,10.1,False,True,True,False,False,False
+68,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.23,AUTRES,2,13.3,False,True,True,False,False,False
+69,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.8,ASUS,4,15.6,True,True,True,False,False,True
+70,Entre 400 et 600,Intel Celeron,4,,256,Windows 11,1.64,HP,1,17.3,False,True,False,False,False,False
+71,Entre 800 et 1150,Intel Core i5,8,,512,Windows 10,2.7,ACER,4,17.3,False,True,False,False,False,False
+72,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 11,1.64,AUTRES,4,15.6,False,False,True,False,False,False
+73,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.8,ASUS,4,15.6,True,True,True,False,False,True
+74,Entre 800 et 1150,Intel Core i5,8,,512,Windows 10,2.7,ACER,4,17.3,False,True,False,False,False,False
+75,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.76,KUU,4,15.6,False,True,True,False,False,True
+76,<250,Intel Celeron,4,1920x1080,64,Windows 10,1.25,AUTRES,2,14.1,True,True,True,False,False,False
+77,Entre 250 et 400,MediaTek,4,1920x1080,256,ChromeOS,450,LENOVO,8,10.1,True,True,False,False,False,False
+78,Entre 250 et 400,MediaTek,4,1920x1080,256,ChromeOS,450,LENOVO,8,10.1,True,True,False,False,False,False
+80,>1150,AMD Ryzen,16,1920x1080,256,Windows 10,1.64,ASUS,1,15.6,True,True,False,False,False,True
+81,Entre 600 et 800,Intel Celeron,8,1920x1080,256,Windows 11,1.64,AUTRES,4,15.6,True,False,False,False,True,False
+82,>1150,Intel Core i7,16,,512,Windows 10,1.000,MICROSOFT,4,15,False,True,False,False,False,False
+83,Entre 250 et 400,Intel Atom,4,1920x1080,128,Windows 10,1.23,AUTRES,2,13.3,False,False,False,False,False,False
+84,Entre 250 et 400,Intel Core i5,8,1920x1080,128,Windows 11,1.5,AUTRES,2,15.6,False,True,True,False,False,False
+85,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 11,1.64,AUTRES,4,15.6,False,False,True,False,False,False
+86,>1150,AMD Ryzen,8,1920x1080,512,Windows 10,2.600,ACER,1,15,True,True,False,False,False,False
+87,Entre 600 et 800,Intel Core i3,16,,256,Windows 10,1.200,LENOVO,2,23.8,False,True,False,False,False,False
+88,Entre 400 et 600,Intel Core i3,8,1920x1080,512,Windows 10,1.41,LENOVO,2,14,False,True,False,False,False,False
+89,Entre 250 et 400,Intel Pentium,4,,128,Windows 10,2.2,ACER,4,14,False,False,False,False,False,False
+90,Entre 400 et 600,Intel Celeron,8,,256,Windows 10,2.5,LENOVO,1,15.6,False,False,False,False,False,False
+91,Entre 250 et 400,Intel Atom,4,1920x1080,64,Windows 10,0.7,AUTRES,4,11.6,False,True,False,False,False,False
+92,Entre 250 et 400,Intel Core i5,16,,180,Windows 10,1.8,HP,2,14.1,False,True,True,False,False,False
+93,Entre 400 et 600,Intel Celeron,8,1920x1080,512,Windows 11,2,AUTRES,4,15.6,False,True,True,False,False,False
+94,>1150,Intel Core i7,16,1920x1080,256,Aucun,1.64,ASUS,8,15.6,True,True,False,False,False,True
+95,Entre 250 et 400,Intel Celeron,6,1920x1080,128,Windows 10,1.8,TECLAST,2,15.6,True,True,False,False,False,False
+96,Entre 400 et 600,Intel Celeron,2,1920x1080,256,Windows 10,1.4,AUTRES,4,14,True,True,True,False,False,False
+97,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.26,ASUS,4,14,True,True,True,False,False,True
+98,Entre 600 et 800,AMD Ryzen,8,,128,Windows 10,2.97,HP,6,17.3,True,True,True,False,False,False
+99,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 11,1.64,AUTRES,4,15.6,False,True,True,False,True,False
+100,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.64,DELL,1,13.3,True,True,False,False,True,True
+101,>1150,Intel Core i7,8,1920x1080,256,Windows 10,1.64,DELL,1,13.3,True,True,False,False,True,True
+102,Entre 400 et 600,Intel Core i3,8,,256,Windows 10,2.2,LENOVO,1,17.3,True,True,True,False,False,False
+103,Entre 800 et 1150,Intel Core i5,512,1920x1080,256,Windows 10,3.500,ACER,1,17.3,False,True,False,False,False,False
+104,Entre 400 et 600,Intel Celeron,8,2160x1440,256,Windows 10,1.5,AUTRES,4,14,False,True,False,False,False,True
+105,Entre 600 et 800,Intel Celeron,8,1920x1080,256,Windows 10,1.64,ACER,1,14,False,True,False,False,False,False
+106,<250,Intel Atom,6,1366x768,128,Windows 10,1.1,KUU,4,13.3,True,True,True,False,False,True
+107,Entre 800 et 1150,Intel Core i5,8,,256,Windows 11,3,ACER,2,17,False,True,False,False,False,False
+108,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 11,1.5,AUTRES,4,15.6,True,True,True,False,True,False
+109,Entre 600 et 800,AMD Ryzen,8,1920x1080,256,Windows 10,1.4,ASUS,4,14,True,True,True,False,False,False
+110,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.050,AUTRES,1,15.6,True,True,True,False,False,False
+111,<250,Intel Celeron,4,1366x768,64,Windows 10,1.4,AUTRES,4,14,True,True,True,False,True,True
+112,Entre 400 et 600,Intel Celeron,8,1920x1080,256,Windows 10,2,AUTRES,2,15.6,True,True,True,False,False,False
+113,>1150,Intel Celeron,16,1920x1080,512,Windows 11,1.64,HP,6,15.6,True,True,True,False,False,False
+114,Entre 600 et 800,Intel Core i3,4,,256,Windows 10,1,ASUS,1,14,False,True,False,False,False,False
+115,Entre 600 et 800,Intel Celeron,8,1920x1080,256,Windows 11,1.64,DELL,4,14,False,False,False,False,False,False
+116,Entre 250 et 400,Intel Celeron,4,1366x768,64,ChromeOS,1.1,AUTRES,1,11.6,True,True,False,False,False,False
+117,Entre 600 et 800,Intel Celeron,8,1920x1080,256,Windows 11,1.64,DELL,4,14,False,False,False,False,False,False
+118,Entre 250 et 400,Intel Core i5,8,1920x1080,256,Windows 11,1.5,AUTRES,2,15.6,False,True,True,False,True,False
+119,Entre 800 et 1150,Intel Core i7,8,1920x1080,512,Windows 11,1.3,ASUS,4,14,True,True,True,False,False,True
+121,Entre 400 et 600,AMD A4,8,1366x768,480,Windows 11,1.8,AUTRES,2,38.6,True,True,True,False,False,True
+122,>1150,Intel Core i7,8,1920x1080,512,Windows 10,2.34,DELL,1,15.6,False,True,True,False,True,False
+123,Entre 400 et 600,Intel Celeron,8,1366x768,256,Windows 11,1.64,AUTRES,2,15.6,True,False,False,False,True,False
+124,<250,Intel Atom,2,1280x800,32,Windows 10,1.2,AUTRES,4,10.1,False,True,True,False,True,False
+125,Entre 800 et 1150,Intel Core i5,8,,256,Windows 10,1.64,LENOVO,4,23.8,False,True,False,False,False,False
+126,>1150,Intel Core i7,16,3840x2160,1000,Windows 10,1.920,HP,6,15.6,True,False,True,False,False,False
+127,>1150,Intel Celeron,16,2280x1920,512,Windows 11,0.89,MICROSOFT,4,13,True,True,False,False,False,False
+128,Entre 250 et 400,Intel Core i5,8,1920x1080,128,Windows 11,1.5,AUTRES,2,15.6,False,True,True,False,False,False
+129,Entre 800 et 1150,Intel Core i3,8,,256,Windows 10,5,ASUS,4,17,False,True,False,False,False,False
+130,Entre 400 et 600,AMD A9,4,,256,Windows 10,2.6,HP,2,15,False,True,False,False,False,False
+131,Entre 400 et 600,Intel Celeron,8,1920x1080,256,Windows 10,1.1,AUTRES,4,11.6,True,True,True,False,False,True
+132,Entre 600 et 800,Intel Celeron,2,1920x1080,512,Windows 10,1.9,LENOVO,2,15.6,True,False,True,False,True,False
+133,Entre 250 et 400,Intel Celeron,4,3000x2000,128,Windows 10,1.64,KUU,1,13.5,False,True,False,False,False,False
+134,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 11,1.400,AUTRES,4,15.6,True,True,True,False,True,False
+135,Entre 400 et 600,AMD Ryzen,256,1920x1080,256,Windows 10,2.43,ACER,1,14,False,True,True,False,True,False
+136,Entre 400 et 600,Intel Core i5,8,,250,Windows 11,1.64,LENOVO,4,14,False,True,False,False,True,False
+137,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 11,1.9,AUTRES,4,15.6,False,True,True,False,True,False
+138,Entre 800 et 1150,Intel Celeron,8,1920x1080,256,Windows 10,1.64,LENOVO,4,15.6,False,False,True,False,False,False
+139,Entre 250 et 400,Intel Celeron,4,1366x768,256,Windows 10,1.64,THOMSON,1,14.1,True,True,True,False,True,False
+140,Entre 250 et 400,Intel Celeron,6,3000x2000,128,Windows 10,1.64,KUU,4,13.5,True,True,True,False,False,False
+141,>1150,Intel Core i7,2,,512,Windows 11,1,ASUS,1,14,False,True,False,False,False,False
+142,Entre 250 et 400,Intel Celeron,4,1366x768,128,Windows 10,1.2,AUTRES,2,14.1,True,True,False,False,False,False
+143,Entre 600 et 800,Intel Celeron,64,1536x1024,256,Windows 10,1.11,MICROSOFT,4,12.45,False,False,False,False,False,False
+144,Entre 250 et 400,AMD Ryzen,8,1368x768,256,Windows 11,1.64,LENOVO,2,15.6,False,False,False,False,False,False
+145,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.9,AUTRES,4,15.6,True,True,True,False,False,True
+146,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 10,1.64,AUTRES,1,14.4,False,False,False,False,False,True
+147,Entre 250 et 400,Intel Celeron,4,,256,Windows 11,0.820,AUTRES,4,14.1,True,True,True,False,False,False
+148,Entre 400 et 600,Intel Core i5,4,1920x1080,256,Windows 10,1.8,LENOVO,1,15.6,True,True,True,False,False,False
+149,Entre 250 et 400,Intel Celeron,6,,256,Windows 10,1.64,AUTRES,4,14.1,True,False,False,False,False,False
+150,Entre 400 et 600,Intel Core i5,8,1920x1080,256,Windows 10,1.850,LENOVO,4,15.6,True,True,True,False,False,False
+151,Entre 400 et 600,Intel Celeron,2,1920x1080,512,Windows 10,1.34,AUTRES,4,14.1,False,True,False,False,False,False
+152,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 11,1.5,AUTRES,4,15.6,True,True,True,False,True,True
+153,Entre 400 et 600,AMD Athlon,8,1920x1080,256,Windows 11,1.85,LENOVO,1,15.6,True,True,True,False,False,False
+154,<250,Intel Atom,64,1366x768,64,Windows 10,1.3,THOMSON,4,14.1,True,True,True,False,False,True
+155,Entre 800 et 1150,Intel Core i5,8,1920x1080,256,Windows 10,2.65,DELL,6,15.6,True,True,True,False,False,False
+156,Entre 600 et 800,Intel Celeron,64,1536x1024,256,Windows 10,1.11,MICROSOFT,4,12.45,False,False,False,False,False,False
+158,<250,Intel Atom,2,1366x768,32,Windows 10,1.19,AUTRES,4,29.4,True,True,True,False,False,True
+159,>1150,Intel Core i7,512,3000x2000,512,Windows 10,3.319,MICROSOFT,1,13.5,True,True,False,False,False,False
+160,<250,Intel Atom,2,1920x1080,32,Windows 10,1,AUTRES,4,10.1,True,True,True,False,False,True
+161,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.41,LENOVO,6,14,False,True,False,False,False,False
+162,Entre 800 et 1150,Intel Core i5,128,2736x1824,128,Windows 10,1.3,MICROSOFT,4,13,False,True,False,False,False,False
+163,Entre 400 et 600,Intel Celeron,8,1920x1280,256,Windows 11,0.54,MICROSOFT,2,10.5,True,True,False,False,False,False
+164,Entre 400 et 600,Intel Core i3,8,1920x1080,256,Windows 10,1.64,AUTRES,2,14,False,True,False,False,False,True
+165,Entre 600 et 800,Intel Xeon,2,1920x1080,1000,Windows 11,2.350,HP,8,15.6,True,True,True,False,False,False
+166,Entre 400 et 600,Intel Celeron,4,,256,Windows 11,1,ASUS,1,14,False,True,False,False,False,False
+167,Entre 250 et 400,Intel Core i9,4,1920x1080,64,Windows 10,1.3,AUTRES,1,14,True,True,True,False,False,False
+168,Entre 600 et 800,Intel Core i3,8,,256,Windows 10,1,ASUS,1,17.3,False,True,False,False,False,False
+170,Entre 250 et 400,Intel Celeron,4,3000x2000,128,Windows 10,1.64,KUU,1,13.5,False,True,False,False,False,False
+171,Entre 250 et 400,Intel Atom,4,1920x1080,64,Windows 10,1.12,AUTRES,4,11.6,True,True,True,False,False,False
+172,Entre 800 et 1150,AMD Ryzen,8,1920x1080,512,Windows 10,2.460,HP,6,15.6,True,True,True,False,False,False
+173,Entre 250 et 400,Intel Core i5,4,,320,Windows 10,1.4,LENOVO,2,12.5,True,True,False,False,True,True
+174,Entre 400 et 600,Intel Celeron,8,1920x1080,256,Windows 10,1.64,AUTRES,1,14.1,False,False,False,False,True,False
+175,Entre 250 et 400,Intel Celeron,8,1920x1080,128,Windows 11,1.5,AUTRES,4,15.6,True,True,True,False,True,False
+176,Entre 400 et 600,Intel Celeron,4,1920x1080,256,ChromeOS,1.64,HP,4,14,False,False,False,False,False,False
+177,Entre 800 et 1150,AMD Ryzen,2,1920x1080,256,Windows 10,1.74,HP,2,15.6,True,True,False,False,True,False
+178,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 11,1.64,KUU,4,15.6,False,True,True,False,False,True
+179,Entre 250 et 400,Snapdragon,4,1920x1080,64,Windows 10,1.64,THOMSON,1,13,False,True,False,False,False,False
+180,Entre 800 et 1150,Intel Celeron,16,1920x1080,512,Windows 11,1.64,DELL,4,15.6,False,True,False,False,True,False
+181,Entre 250 et 400,Apple M1,8,,256,MacOS,1.64,APPLE,4,15.6,False,False,False,False,False,False
+182,Entre 600 et 800,AMD Ryzen,8,1920x1080,512,Windows 10,1.41,LENOVO,6,14,False,True,False,False,False,False
+183,Entre 250 et 400,AMD Ryzen,4,,256,ChromeOS,1.05,ACER,1,11,True,True,False,False,False,False
+184,Entre 800 et 1150,AMD Ryzen,8,1920x1080,1000,Windows 10,1.85,LENOVO,4,15.6,False,True,False,False,True,False
+185,>1150,Intel Celeron,16,,512,Windows 10,1.64,MSI,4,15.6,False,False,False,False,False,False
+186,Entre 250 et 400,Intel Celeron,8,1366x768,250,Windows 10,1.76,DELL,2,14.1,False,True,True,False,False,True
+187,>1150,Intel Core i5,16,1920x1080,256,Windows 10,1.64,LENOVO,6,15.6,False,True,False,False,True,False
+188,Entre 400 et 600,Intel Celeron,8,1920x1080,256,Windows 10,1.64,AUTRES,1,14.1,False,False,False,False,True,False
+189,>1150,Intel Core i5,8,,512,Windows 10,2.7,ACER,4,17.3,False,True,False,False,False,False
+190,Entre 250 et 400,Intel Celeron,6,1920x1080,64,Windows 10,1.64,NBD,2,14.1,False,True,True,False,False,False
+191,Entre 800 et 1150,Intel Core i5,8,3840x2160,256,Windows 10,0.95,AUTRES,1,13.3,False,True,False,False,False,False
+192,Entre 600 et 800,Intel Core i3,8,1920x1080,256,Windows 11,1,ASUS,1,14,True,True,False,False,False,False
+193,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.25,AUTRES,4,14,True,True,False,False,False,False
+194,Entre 600 et 800,Intel Core i5,8,1920x1080,256,Windows 10,1.64,DELL,1,15.6,True,True,True,False,True,False
+195,Entre 250 et 400,Apple M1,8,,256,MacOS,1.64,APPLE,4,15.6,False,False,False,False,False,False
+196,Entre 800 et 1150,Intel Core i5,8,1920x1080,256,Windows 10,1,ASUS,4,23.6,False,True,False,False,True,False
+197,Entre 400 et 600,AMD Athlon,8,1920x1080,256,Windows 10,1.64,AUTRES,2,21.5,False,False,False,False,True,False
+198,Entre 400 et 600,Intel Celeron,8,,256,Windows 11,2.37,HP,2,15.6,False,True,False,False,True,False
+199,>1150,Intel Core i7,6,1920x1080,512,Windows 10,1.000,DELL,1,15.6,True,True,True,False,True,False
+200,>1150,Intel Core i7,6,1920x1080,512,Windows 10,1.000,DELL,1,15.6,True,True,True,False,True,False
+201,Entre 600 et 800,AMD Ryzen,8,,512,Windows 10,1,HP,6,15,False,True,True,False,True,False
+202,Entre 400 et 600,Intel Celeron,8,1920x1080,500,Windows 10,1.400,HP,2,14,True,False,False,False,False,False
+203,Entre 600 et 800,Intel Core i5,4,1920x1080,512,Windows 10,1.85,LENOVO,4,15.6,True,True,True,False,True,False
+204,Entre 250 et 400,Intel Celeron,6,3000x2000,128,Windows 10,1.64,KUU,4,13.5,True,True,True,False,False,False
+205,>1150,AMD Ryzen,8,2560x1440,1000,Windows 10,2.7,RAZER,8,14,False,True,False,False,True,False
+206,Entre 800 et 1150,AMD Ryzen,8,1366x768,500,Windows 10,2,HP,2,15.6,True,True,True,False,True,True
+207,Entre 400 et 600,Intel Celeron,4,1600x900,500,Windows 10,2.65,HP,1,17.3,False,True,True,False,False,False
+208,Entre 600 et 800,Intel Celeron,8,,512,Windows 10,1,ACER,4,14,False,False,False,False,False,False
+209,Entre 800 et 1150,AMD Ryzen,8,1920x1080,1000,Windows 10,1.85,LENOVO,4,15.6,False,True,False,False,True,False
+210,Entre 400 et 600,Intel Core i3,8,,256,Windows 11,1.64,HP,1,12.5,False,False,False,False,False,False
+211,>1150,Intel Core i7,16,1920x1080,512,Windows 10,1.3,MSI,4,14,True,True,False,False,False,False
+212,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 10,1.3,TECLAST,4,14.1,True,True,True,False,False,False
+213,Entre 600 et 800,Intel Core i3,128,1600x900,1000,Windows 10,3,ACER,2,17.3,False,True,True,False,False,False
+214,Entre 600 et 800,Intel Celeron,2,1920x1080,756,Windows 11,1.64,ASUS,2,15.6,True,True,False,False,False,False
+215,>1150,Intel Core i7,16,1920x1080,512,Windows 11,2.0,ASUS,4,15.6,True,True,True,False,False,False
+216,Entre 600 et 800,Intel Celeron,2,1920x1080,756,Windows 11,1.64,ASUS,2,15.6,True,True,False,False,False,False
+217,>1150,Intel Core i7,16,1920x1080,512,Windows 11,2.0,ASUS,4,15.6,True,True,True,False,False,False
+220,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 11,1.850,LENOVO,4,15.6,True,True,True,False,False,False
+221,Entre 250 et 400,Intel Celeron,8,1920x1080,256,Windows 11,1.400,AUTRES,4,15.6,True,True,True,False,True,False
+222,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.64,NBD,2,14.1,False,True,True,False,False,True
+223,Entre 250 et 400,AMD Ryzen,4,,256,ChromeOS,1.05,ACER,1,11,True,True,False,False,False,False
+224,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 11,1.850,LENOVO,4,15.6,True,True,True,False,False,False
+225,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.64,NBD,2,14.1,False,True,True,False,False,True
+226,Entre 250 et 400,AMD Ryzen,4,,256,ChromeOS,1.05,ACER,1,11,True,True,False,False,False,False
+227,Entre 800 et 1150,Intel Celeron,16,1920x1080,512,Windows 10,2.95,ACER,4,15.6,False,False,False,False,False,False
+228,Entre 800 et 1150,Intel Core i7,8,1366x768,500,Windows 7 Pro,1.340,HP,2,12.5,True,True,False,False,False,True
+230,Entre 250 et 400,Intel Celeron,4,1920x1080,256,Windows 10,1,LENOVO,2,15.6,False,True,True,False,False,False
+231,<250,Cortex A8,1,1024x600,8,Android,1.64,AUTRES,4,10,True,False,True,False,True,False
+232,Entre 400 et 600,Intel Core i5,8,,180,Windows 11,1.5,HP,1,12.5,False,True,False,False,True,True
+233,Entre 800 et 1150,Intel Celeron,8,,512,Windows 10,5,MSI,4,15.6,False,False,False,False,False,False
+234,>1150,Intel Core i7,16,1920x1080,1000,Windows 10,3.2,DELL,1,17.3,True,True,True,False,False,False
+235,Entre 250 et 400,Intel Celeron,6,1280x800,128,Windows 10,1,AUTRES,4,10.1,False,True,True,False,False,False
+237,>1150,Intel Core i7,8,,1000,Windows 10,1.64,RAZER,8,15.6,False,True,False,False,False,False
+238,>1150,AMD Ryzen,16,1920x1080,1000,Windows 10,1.980,HP,8,15.6,True,True,True,False,False,False
+239,Entre 800 et 1150,Intel Core i5,8,1920x1080,512,Windows 11,1.7,LENOVO,4,15.6,True,True,True,False,False,False
+240,>1150,Intel Core i7,8,1920x1080,512,Windows 10,1.16,DELL,1,13,True,False,False,False,False,False
+241,Entre 600 et 800,Intel Core i5,8,1920x1080,256,DOS,1.740,HP,4,15.6,True,True,True,False,False,False
+242,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 10,1.850,LENOVO,2,15.6,True,True,True,False,False,False
+243,Entre 250 et 400,Intel Pentium,4,,64,Windows 10,1,ACER,1,14,False,True,False,False,False,False
+244,Entre 400 et 600,AMD Ryzen,8,1920x1080,256,Windows 10,1.850,LENOVO,2,15.6,True,True,True,False,False,False
+245,Entre 250 et 400,Intel Pentium,4,,64,Windows 10,1,ACER,1,14,False,True,False,False,False,False
+246,>1150,Intel Core i7,512,,512,Windows 10,1.64,RAZER,1,17.3,False,True,False,False,False,False
+247,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.400,AUTRES,2,13.3,False,True,False,False,False,False
+248,Entre 250 et 400,Intel Celeron,4,1920x1080,64,Windows 10,1.23,AUTRES,2,13.3,False,True,True,False,False,False
+249,Entre 400 et 600,Intel Core i5,8,,180,Windows 11,1.5,HP,1,12.5,False,True,False,False,True,True
+250,Entre 800 et 1150,Intel Core i7,16,1920x1080,512,Windows 11,2.5,ASUS,1,14,True,True,False,False,False,False
+251,Entre 400 et 600,Intel Celeron,8,1366x768,256,Windows 11,1.5,HP,2,14,True,True,True,False,True,True
+252,Entre 400 et 600,Intel Celeron,2,1920x1080,256,Windows 10,1.5,TECLAST,4,14,False,True,True,False,False,False
+253,Entre 400 et 600,Intel Celeron,4,1368x768,256,Windows 10,1.8,ASUS,2,15.6,True,True,True,False,False,True
