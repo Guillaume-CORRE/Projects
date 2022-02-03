@@ -1,0 +1,557 @@
+---
+title: "Projet Modèle de comptage M2"
+author: "Corre_Lenoir"
+date: ""
+lang: fr
+header-includes:
+    - \usepackage{dcolumn}
+    - \usepackage{float}
+output:
+ pdf_document:
+    df_print: kable
+    keep_tex: yes
+    number_section: yes
+    toc: yes
+ rmdformats::readthedown:
+   gallery: no
+   highlight: tango
+   lightbox: yes
+   self_contained: yes
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup, echo = FALSE, cache=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.height = 5.5, 
+                      fig.width = 12, sanitize = TRUE, echo = FALSE, cache = F, results = 'asis')
+```
+
+
+```{r, packages}
+library(haven)
+library(dplyr)
+library(tidyverse)
+library(kableExtra)
+library("AER")
+library(sandwich)
+library(stargazer)
+library(ggplot2)
+library(lmtest)
+library("MASS")
+library(mfx)
+library(pscl)
+library(margins)
+library(glmmTMB)
+library(lme4)
+library(ggeffects)
+```
+
+
+```{r, fonction pour les tableaux}
+tab_fun <- function(tab, above = FALSE,modele=FALSE, title = title, font_size = 10, header = NULL,q = q,t1, m = m,t2, p = p, ...){
+if(above){
+tab %>% kable(caption = title) %>%
+kable_styling(font_size = font_size, full_width=FALSE, stripe_color = "lightgray", stripe_index = 0,
+latex_options = c("HOLD_position", "striped"), position = "center") %>%
+add_header_above(c(" "=q, setNames(m,t1), setNames(p,t2)),
+bold=TRUE, color="blue")%>%
+column_spec(1, bold=T) %>%
+column_spec(c(2,5), color = "#061E8F")%>% column_spec(c(4,7), color = "#07910C") %>%
+row_spec(0, bold=T)
+} else if(modele) {
+tab %>% kable(caption = title) %>%
+kable_styling(font_size = font_size, full_width=FALSE, stripe_color = "lightgray", stripe_index = 0,
+latex_options = c("HOLD_position", "striped"), position = "center") %>%
+column_spec(1, bold=T) %>%
+column_spec(2, color = "#061E8F")%>% column_spec(4, color = "#07910C") %>%
+row_spec(0, bold=T)
+}
+else{
+tab %>% kable(caption = title) %>%
+kable_styling(font_size = font_size, full_width=FALSE, stripe_color = "lightgray", stripe_index = 0,
+latex_options = c("HOLD_position", "striped"), position = "center") %>%
+column_spec(1, bold=T) %>%
+row_spec(0, bold=T)
+}
+}
+```
+
+
+```{r, Import, réduction et suppression NA}
+
+#Import
+data<-read_dta("mus18data.dta")
+
+#Réduction
+data<-subset(data,select = c(mdu,lcoins,idp,lpi,fmde,mdeoff,linc,lfam,age,female,child,femchild,black,educdec,physlim,ndisease,hlthg,hlthf,hlthp))
+
+
+# Supression NA et valeurs abérrantes
+data<- data %>% na.omit()
+data<-data[-c(data$age==0),]
+```
+
+```{r,recodage}
+data$black<-ifelse(data$black<0.5,0,1)
+#summary(black)
+
+for (i in c(3,10:13,15,17:19)){
+  data[i]<-as.factor(data[[i]])
+}
+```
+
+
+# Introduction
+
+Nous allons dans ce rapport, estimer le nombre de visites chez le médecin pour un individu. Pour cela, nous allons devoir utiliser des modèles de comptage. 
+Pour appuyer notre travail, nous avons une base de données avec 20184 observations et 19 variables. Notre variable à expliquer sera la variable `mdu` qui correspond au nombre de visite chez le médecin.
+
+```{r, Histogramme pour la distribution de mdu, fig.width=5, fig.height=3 }
+ggplot(data, aes(x=mdu)) + geom_histogram(fill="darkred", color="grey")+
+  labs(y = "Effectif", x="Nombres de visites", title="Distribution de la variable mdu")+
+  xlim(-1,30)+ylim(0,6500)+
+  theme_minimal()
+  
+#table(data$mdu)
+```
+
+La distribution n'est clairement pas Gaussienne-normale mais plutôt de Poisson avec un paramètre $\lambda$ faible.
+On remarque une très grande proportion de 0 et l'effectif est décroissant avec le nombre de visites.
+
+Maintenant, voici un résumé des différentes variables qualitatives : 
+
+```{r, resumé des variables quantitatives}
+quanti<-as.data.frame(cbind(summary(data$mdu),summary(data$lcoins),summary(data$lpi),summary(data$fmde),summary(data$mdeoff),summary(data$linc),summary(data$lfam),summary(data$age),summary(data$educdec),summary(data$ndisease)))
+colnames(quanti)<-c("mdu","lcoins","lpi","fmde","mdeoff","linc","lfam","age","educdec","ndisease")
+quanti %>% round(2) %>% tab_fun(title = "Sommaire variable quantitatives")
+```
+
+Pour la variable à expliquer, le nombre de visite varie entre 0 et 77 visites sur la durée de l'étude, avec une médiane à 1, c'est-à-dire que 50% des individus ont été une fois maximum chez le médecin. \newline
+Les individus ont un âge moyen de 26 ans avec une taille de famille variant de `r exp(0)` à `r round(exp(2.64))` personnes. \newline
+`lcoins` signifie la part des dépenses de santé qui est payé par le client. Cette part varie entre `r exp(min(data$lcoins))-1` % et `r round(exp(max(data$lcoins)))-1` %. 
+
+
+```{r, résumé des variables qualitatives}
+quali<-as.data.frame(cbind(table(data$idp),table(data$female),table(data$black),table(data$child),table(data$femchild),table(data$hlthg),table(data$hlthf),table(data$hlthp)))
+colnames(quali)<-c("idp","female","black","child","femchild","hlthg","hlthf","hlthp")
+quali %>% tab_fun(title = "Sommaire des variable qualitatives")
+
+```
+
+La base de données est donc composée majoritairement de femmes, de personnes blanches et de personnes de plus de 18 ans. 
+
+Pour le niveau de santé `r sum(data$hlthp==1)` personnes se disent en mauvais état de santé, `r sum(data$hlthf==1)` de santé moyenne et `r sum(data$hlthg==1)` en bonne santé. Le reste (11014) se disent par défaut en excellente santé. 
+
+# Question 1
+
+Le premier modèle que nous estimerons est le modèle de Poisson simple. Ce modèle repose sur l'hypothèse très forte que l'espérance est égale au paramètre $\lambda$ qui est égal à la variance. La variable à expliquer `mdu` est une variable de comptage que l'on peut observer que sur $[0;+\infty]$.
+Premièrement, nous regardons les valeurs de moyenne et de variance : 
+
+```{r}
+moyenne<-mean(data$mdu)
+variance<-var(data$mdu)
+
+moy_var<-as.data.frame(rbind(moyenne, variance)) 
+colnames(moy_var)<-("Valeur")
+moy_var %>% round(3) %>% tab_fun(title="Moyenne / Variance")
+```
+
+La variance diffère largement de la moyenne. On peut déjà supposer que l'on aura de la sur-dispersion.
+
+\newpage
+
+Voici le modèle poisson de base que nous estimons : 
+
+$$ln(mdu_{it})=\beta_{0i}+\beta_1lcoins_{it}+\beta_2 age_{it}+\beta_3 idp_{it}+ \beta_4 linc_{it}+ \beta_5 female_{it}+$$ \newline
+$$\beta6 educdec_{it} + \beta7 black_{it} + \beta8 hlthf_{it} +\beta9 hlthg_{it} + \beta10 hlthp_{it}$$
+
+Ainsi que les résultats de cette régression : 
+
+```{r, poisson simple}
+poisson<-glm(mdu~lcoins+idp+linc+female+educdec+age+black+hlthg+hlthf+hlthp,data=data,family = "poisson")
+
+stargazer(poisson, type="latex", no.space=TRUE, align=T, table.placement = "H", header=FALSE )
+#summary(poisson)
+#logLik(poisson)
+```
+
+On remarque que tous les coefficients sont significatifs.
+
+Pour tester l'importance des variables `lcoins` et `idp`, on doit estimer un modèle sans celles-ci (modèle imbriqué) et faire un test de rapport de vraisemblance :
+
+$$ln(mdu_{it})=\beta_{0i}+\beta_1 age_{it}+\beta_2 linc_{it}+ \beta_3 female_{it}+\beta4 educdec_{it} + \beta5 black_{it} + \beta6 hlthf_{it} +\beta7 hlthg_{it} + \beta8 hlthp_{it}$$
+```{r, modele contraint}
+poisson_contraint<-glm(mdu~linc+female+educdec+age+black+hlthg+hlthf+hlthp,data=data,family = "poisson") #modèle contraint
+#summary(poisson_contraint)
+#stargazer(poisson_contraint, type="text")
+#logLik(poisson_contraint)
+```
+
+Voici les hypothèses du test de rapport de vraisemblance : 
+
+H0 : Les modèles complets et imbriqués correspondent tout aussi bien aux données. Par conséquent, on utilise le modèle imbriqué. \newline
+H1 : Le modèle complet surpasse considérablement le modèle imbriqué en termes d’ajustement des données. Par conséquent, on utilise le modèle complet. 
+
+
+On obtient la statistique du rapport de vraisemblance de cette manière : 
+$$stat= 2(L_{Poisson}-L_{Poissoncontraint}) $$
+
+```{r, Test}
+#Khi_2<-2*(logLik(poisson)-logLik(poisson_contraint))
+
+#rltable(poisson) %>% tab_fun(title = "Modèle de poisson complet")
+lrtest(poisson,poisson_contraint) %>% tab_fun(title = "Test du rapport de vraisemblance")
+```
+
+De ce test, on remarque que la valeur de la statistique du Khi-deux est de 1619.4 et que la p-value est très faible (< au seuil 5%). Donc on rejette H0, l'hypothèse que les deux modèles sont équivalents. Le modèle doit prendre en compte les variables `lcoins` et `idp` puisqu'elles ont un effet sur la régression de Poisson.
+
+
+# Question 2
+
+Dans cette question, nous allons évaluer la qualité de l'ajustement.
+On a remarqué que la variance était supérieure à la moyenne, le modèle de Poisson se basant sur une distribution de poisson ($\lambda =E(Y) =V(Y)$), notre modèle aura surement des problèmes d'ajustement (problème de sur-dispersion)
+
+```{r, premiere estimation des données}
+# "Comptages" observés et estimés
+rbind(obs = table(data$mdu)[1:10], exp = round(sapply(0:9, function(x) sum(dpois(x, fitted(poisson)))))) %>% tab_fun(title="Valeurs prédites du modèle de Poisson")
+```
+
+Les valeurs prédites du modèle de Poisson sont très mal ajustées aux données sauf pour la valeur 1. Quant à elle, la valeur 0 peut poser un gros problème car seulement `r round(1971/6307 * 100)` % sont bien évalués.
+
+## Statistique déviance
+
+On calcule tout d'abord la statistique de deviance grâce aux valeurs estimées du modèle de Poisson. La formule s'écrit : 
+
+$$2 \sum ^n_{i=1} (y_i log(\frac{y_i}{exp{Xi\beta}})- (y_i-exp{X_i\beta})) $$
+
+```{r, Récupération des valeurs ajustées}
+lambda<- poisson$fitted.values
+#print(lambda)
+```
+
+```{r, Statistique deviance}
+#poisson$deviance
+deviance<- 2 * sum(ifelse(data$mdu>0,data$mdu*log(data$mdu/lambda),0)-(data$mdu-lambda))
+```
+
+La statistique de deviance est `r deviance`, maintenant nous testons sa significativité : 
+
+```{r, significativité (p_value)}
+p_value<-(pchisq(deviance,poisson$df.residual,lower.tail = FALSE))
+```
+
+La p-value est de `r p_value`. Au seuil 5%, les valeurs prédites $\hat{\lambda}$ s'écartent significativement des données observées, le modèle n'est pas bien ajusté.
+
+## Pseudo R2 
+
+Vu que le $R^2$ ne s'interprète pas comme la proportion de variance expliquée par la regression de Poisson, le pseudo $R^2$ est plus adéquat. Voici sa formule :
+
+$$R^2 = 1 - \frac{D(\hat\beta)}{D(\hat\beta_0)}$$ où $D(\hat\beta)$ est la déviance résiduelle et $D(\hat\beta_0)$ est la déviance du modèle avec seulement la constante. 
+
+```{r, Pseudo-R2}
+pseudo_R2 <- 1.0 - deviance / poisson$null.deviance
+#print(pseudo_R2)
+```
+
+Le pseudo $R^2$ est de `r round(pseudo_R2,3)`. Par rapport au modèle trivial, nous avons une réduction de 10% de la variance.
+Nous savons que si un modèle est bien ajusté, le $R^2$ doit être le plus proche possible de 1. Dans notre cas, il est très loin de cette valeur. 
+
+## Rapport de vraisemblance
+
+Utile pour tester la significativité globale du modèle. On teste l'écart de déviance. 
+
+Voici les hypothèses du test de rapport de vraisemblance :\newline
+$H_0$ : Tous les coefficients sont nuls égaux à 0. 
+\newline
+$H_1$ : Les coefficients sont différents de 0.
+
+Le rapport de vraisemblance a de nombreux point communs avec la statistique de déviance et le pseudo $R^2$. Voici sa formule :
+
+$$LR=D(\hat\beta_0) - D(\hat\beta)$$
+
+```{r, rapport de vraisemblance}
+LR<- poisson$null.deviance - deviance
+#LR
+```
+
+```{r, significativité (p-value)}
+test_vrai<-as.data.frame(pchisq(LR, 2, lower.tail = FALSE))
+colnames(test_vrai)<-c("p-value")
+rownames(test_vrai)<-c("Valeur")
+test_vrai%>% tab_fun(title ="Résultat test de significativité du rapport de vraisemblance")
+```
+
+La pvalue est très faible, inférieur au seuil 5%.
+On rejette donc l'hypothèse $H_0$, le modèle équiprobable n'ajuste pas le modèle.
+Le modèle est globalement significatif à 5%.
+
+
+# Question 3
+
+Comme nous avons vu précédemment, la variance n'est clairement pas égale à la moyenne, et donc cela créer des problèmes de sur-dispersion dans notre cas. Nous allons tester cette sur-dispersion : 
+
+* Premièrement, nous prenons les valeurs estimés $\hat{\lambda}$ du modèle. Pour rappel, $\hat\lambda= e^{X_i\beta}$
+* Ensuite, nous allons tester la sur-dispersion en considérant l'hypothèse suivante : $Var(y_i|X_i) = \lambda_i + \alpha g(\lambda_i)$ où $g(\lambda_i)$ prend soit $\lambda_i$ soit $\lambda_i^2$
+* Nous pouvons donc faire une regression MCO sans constante de la forme : 
+$\frac{(y_i - \hat{\lambda_i})^2 - y_i}{\hat\lambda_i} = \alpha \frac{g(\hat{\lambda_i})}{\hat\lambda_i} + u_i$ où $u_i$ est l'erreur hétéroscédastique.
+
+Nous allons donc tester si : 
+
+$H0: \alpha = 0$ et donc la variance est égale à l'espérance. 
+
+$H1: \alpha > 0$ et donc la variance est différente de l'espérance.
+
+
+```{r, Ajout de la variable à la base de données}
+data$estimes<- lambda
+data$estimes_2<-lambda^2
+```
+
+```{r, MCO auxiliaire}
+var_cond = (((data$mdu - data$estimes)^2) - data$mdu)
+data$var_cond<-var_cond /data$estimes
+
+X=data$estimes/data$estimes
+X2=data$estimes_2/data$estimes
+
+modele_auxiliaire<-lm(var_cond ~ X-1, data=data)
+
+modele_auxiliaire_2<- lm(var_cond ~ X2-1, data= data)
+
+#summary(modele_auxiliaire_2)
+
+stargazer(modele_auxiliaire, modele_auxiliaire_2, type = "latex", table.placement = "H", header=FALSE)
+```
+
+On remarque que lorque $g(\lambda_i) = \lambda_i$, la valeur estimée de $\alpha$ est de 5.4 et significative. De même, lorsque $g(\lambda_i) = \lambda_i^2$, la valeur estimée de $\alpha$ est de 1.7 et significative. Les deux $\alpha$ estimés sont positifs, supérieur à 0 et significatifs et donc on est en présence de sur-dispersion puisque la variance n'est pas égale à l'espérance. On conforte notre test avec la commande `dispersiontest` de R et on obtient relativement les mêmes résultats.
+
+
+```{r}
+test_1<-dispersiontest(poisson,trafo=1)
+test_2<-dispersiontest(poisson,trafo=2)
+
+coef_mod1<-coef(modele_auxiliaire)[1]
+coef_mod2<-coef(modele_auxiliaire_2)[1]
+
+alpha<-as.data.frame(rbind(test_1$estimate,test_2$estimate))
+a<-rbind(coef_mod1,coef_mod2)
+alpha<-cbind(alpha,a)
+colnames(alpha)<-c("test","MCO")
+rownames(alpha)<-c('alpha','alpha^2')
+
+alpha %>% round(3) %>% tab_fun(title="Resultat sur-dispersion")
+```
+
+On remarque bien que alpha est supérieur à 0 significativement et que donc $V[yi|xi]$ est different de $\lambda$.
+
+Ici, nous pouvons observer une des limites du modèle de Poisson. Quand une trop grande proportion de zéro est comprise dans la variable de comptage, il peut y avoir de la sur-dispersion, c'est-à-dire qu'il existe une trop forte variation dans les observations. Cela peut entrainer une sous-estimation de la variance des coefficients. 
+
+**Le modèle de Poisson n'est donc pas le modèle qui s'ajuste le mieux aux donnéees**
+
+# Question 4
+
+Une autre façon d’aborder la sur-dispersion dans le modèle est de modifier notre hypothèse de distribution par le modèle binomial négatif. Ce modèle est une alternative au modèle de Poisson puisqu'il possède un paramètre en plus (celui de dispersion) qui permet d'estimer la variance indépendamment de la moyenne. 
+
+Voici les résultats obtenus en comparaison au modèle de Poisson simple: 
+
+```{r}
+neg_bin<-glm.nb(mdu~lcoins+idp+linc+female+educdec+age+black+hlthg+hlthf+hlthp,data=data)
+
+#summary(neg_bin)
+#exp(coef(neg_bin))
+
+```
+
+```{r}
+stargazer(poisson, neg_bin, type="latex", header=FALSE, no.space = T, table.placement = "H")
+#table(data$lcoins) # log quanti
+#table(data$hlthp) # dichotomique
+
+
+```
+
+En terme de coefficients, les deux modèles sont relativement égaux mais il est important de montrer que le modèle binomiale négatif est meilleur que une simple modèle de Poisson. On remarque le paramètre $\theta$ = `r round(neg_bin$theta,3)`, un paramètre de dispersion, est supérieur à 0 et significatif. Les données sont donc dispersées et on a une préférence pour le modèle binomial négatif.
+
+Nous pouvons également utiliser le rapport de vraisemblance entre les deux modèles (Khi-2 = `r 2*(logLik(neg_bin)-logLik(poisson))`). On peut donc dire que l'on rejette l'hypothèse $H_0$ et donc que le modèle binomial négatif est bien meilleur. 
+
+Il existe un autre moyen de prouver la sur-dispersion est de faire la déviance résiduelle sur les degrès de liberté. 
+
+```{r}
+D_poisson=poisson$deviance/20173
+D_bin=neg_bin$deviance/20173
+dev=as.data.frame(cbind(D_poisson,D_bin))
+rownames(dev)<-c("Sur-dispersion")
+dev %>% round(3) %>% tab_fun(title = "Comparaison de sur-dispersion")
+```
+
+La sur-dispersion dans le modèle binomial négatif est beaucoup moins élévée que celle dans le modèle de Poisson. On peut donc dire que le modèle est meilleur. Comme ce rapport est largement supérieur à 1 alors il est préférable de prendre un modèle binomial négatif. 
+
+# Question 5
+
+Avant de commencer à calculer les effets marginaux, regardons quelques chiffres qui pourront nous aider à interpréter les résultats suivant. 
+
+```{r}
+lcoins_sante<-as.data.frame(cbind(exp(mean(data$lcoins[data$hlthp==1])),exp(mean(data$lcoins[data$hlthp==0 & data$hlthg==0 & data$hlthf==0]))))
+colnames(lcoins_sante)<-c("Mauvais","Excellente")
+rownames(lcoins_sante)<-c("Lcoins")
+lcoins_sante %>% round(3) %>% tab_fun(title = "Pourcentage moyen de co-assurance par rapport à l'état de santé")
+```
+
+Ici, on peut voir que le pourcentage moyen des frais médicaux payés par les individus est moins interessant pour les individus qui ont un meilleur état de santé. On peut supposer que les individus se sentant en mauvaise santé payent plus cher une assurance qui rembrousera le plus possible les frais médicaux. 
+
+```{r}
+lcoins_mdu<-as.data.frame(cbind(exp(mean(data$lcoins[data$mdu==0])),exp(mean(data$lcoins[data$mdu==1])),exp(mean(data$lcoins[data$mdu==2])),exp(mean(data$lcoins[data$mdu==10]))))
+colnames(lcoins_mdu)<-c("0", "1", "2","10")
+rownames(lcoins_mdu)<-c("Lcoins")
+lcoins_mdu %>% round(3) %>% tab_fun(title = "Pourcentage moyen de co-assurance par rapport au nombre de visite chez le medecin")
+```
+
+Dans ce tableau, on voit que plus le nombre de visites chez le medecin est important, plus les individus dépensent une part moins importante dans les frais de santé. On peut faire l'hypothèse que plus un individu va chez le médecin, plus il est malade et donc plus il va payer une assurance qui va prendre en charge les frais médicaux. 
+
+```{r}
+
+m2 <- glmmTMB(mdu~linc+lcoins+female+educdec+age+black+hlthg+hlthf+hlthp,data=data,family = "nbinom2")
+
+pr1 <- ggpredict(m2, c("lcoins", "hlthp"))
+plot(pr1)
+```
+
+Ce graphique nous montre bien la même chose que les deux tableaux précédents. 
+
+Pour déterminer les effets marginaux, nous appliquons cette formule : 
+
+$$\frac{\partial E[y|X]}{\partial x_j} = e^{X\beta} \beta_j$$
+où $E[y|X]= e^{X\beta}$
+
+```{r}
+marginal<-neg_bin$fitted.values * neg_bin$coefficients[2]
+data$marginal<-marginal
+
+data_excellent<-data[data$hlthf==0 & data$hlthg==0 & data$hlthp==0,]
+data_poor<-data[data$hlthp==1 & data$hlthf==0 & data$hlthg==0,]
+
+effet_mar<-as.data.frame(cbind(mean(data_excellent$marginal),mean(data_poor$marginal)))
+colnames(effet_mar)<-c("Lcoins|Excellent","Lcoins|Mauvais")
+rownames(effet_mar)<-c("Effet marginal")
+effet_mar %>% round(3) %>% tab_fun(title = "Effets marginaux de lcoins sur mdu")
+
+```
+
+Ces résultats peuvent s'interpréter de la façon suivante : 
+
+* Une variation d'une unité de `lcoins` diminuera les visites chez le medecin de 0,208 unité si l'individu est en excellente santé.
+* Pour une unité de `lcoins` en plus, si l'individu est en mauvaise santé, cette variable diminuera les visites chez le medecin de 0.435 unité. 
+Donc plus un individu s'estime en mauvaise santé, pour une variation de `lcoins` l'impactera.
+
+Une autre façon de déterminer les effets marginaux directement par R est la commande `ngbinmfx`. 
+
+```{r, effets marginaux}
+#negbinmfx(mdu~lcoins+idp+linc+female+educdec+age+black+hlthg+hlthf+hlthp, data=data, atmean = TRUE, robust = FALSE, clustervar1 = NULL, 
+#         clustervar2 = NULL, start = NULL, control = glm.control())
+
+```
+
+# Question 6
+
+Danc cette question, nous allons réalisé un modèle Hurdle. En effet, nous avons énormément de zéros et dans un modèle poisson, il se peut que les valeurs nulles proviennent d'un effet individuel d'aller ou non chez le médecin. Le modèle Hurdle va tenter de supprimer cela.
+Le modèle se divise en deux parties : la première va regarder si l'individu va chez le médecin ou non (estimé par un logit binomial) qui est le "zero hurdle model" et une deuxième qui va estimer les valeurs positives, combien de fois l'individu va chez le medecin (estimé par un poisson binomial négatif tronqué) qui est le "count model". Voici les estimations du modèle : 
+
+```{r, Modèle à obstacle "Hurdle model}
+
+modele_hurdle <- hurdle(mdu ~lcoins+idp+linc+female+educdec+age+black+hlthg+hlthf+hlthp, data=data, dist="negbin", zero.dist="binomial")
+
+
+#hurdlePart <- glm(formula = I(mdu>0) ~ lcoins+idp+linc+female+educdec+age+black+hlthg+hlthf+hlthp,
+                 # data    = data,
+                  #family  = binomial(link = #"logit"))
+
+```
+
+
+\begin{table} \centering
+\caption{}
+\label{}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+& \multicolumn{3}{c}{\textit{Dependent variable: mdu}} \\
+\cline{2-4}
+\cline{2-3}
+\\[-1.8ex] & \multicolumn{2}{c}{Hurdle} \\
+\cline{2-3}
+\\[-1.8ex] & count & zero-hurdle & Poisson\\
+\hline \\[-1.8ex]
+lcoins & $-$0.052$^{***}$ & $-$0.137$^{***}$ & $-$0.071$^{***}$\\
+& (0.006) & (0.008) & (0.002) \\
+&  &\\
+idp1 & $-$0.036 & $-$0.268$^{***}$ & $-$0.129$^{***}$\\
+& (0.029) & (0.037) & (0.010)\\
+& & \\
+linc & 0.037$^{**}$ & 0.106$^{***}$ & 0.070$^{***}$ \\
+& (0.012) & (0.014) & (0.005) \\
+& & \\
+female1 & 0.186$^{***}$ & 0.520$^{***}$& 0.291$^{***}$ \\
+& (0.024) & (0.032) & (0.009) \\
+&  &\\
+educdec & 0.006 & 0.055$^{***}$ & 0.020$^{***}$ \\
+& (0.005) & (0.006) & (0.002) \\
+&  &\\
+age & 0.004$^{***}$ & 0.002$^{***}$ & 0.004$^{***}$ \\
+& (0.001) & (0.001) & (0.0003) \\
+&  &\\
+black1 & $-$0.40$^{***}$ & $-$1.29$^{***}$ & $-$0.758$^{***}$ \\
+& (0.041) & (0.042) & 0.015 \\
+&  &\\
+hlthg1 & 0.103$^{***}$ & 0.093$^{***}$ & 0.112$^{***}$ \\
+& (0.027) & (0.036) & (0.009) \\
+&  &\\
+hlthf1 & 0.484$^{***}$ & 0.426$^{***}$ & 0.485$^{***}$ \\
+& (0.049) & (0.067) & (0.015) \\
+&  &\\
+hlthp1 & 0.841$^{***}$ & 1.017$^{***}$ & 0.888$^{***}$ \\
+& (0.094) & (0.157) & (0.026) \\
+&  &\\
+Constant & 0.341$^{**}$ & $-$0.514$^{***}$ & 0.109$^{**}$ \\
+& (0.120) & (0.143) & (0.046) \\
+&  &\\
+ln($\theta$) & $-$0.642$^{***}$ &  &  \\
+& (0.121) &  & \\
+&  &\\
+\hline \\[-1.8ex]
+Observations & \multicolumn{2}{c}{20,184} & 20,184 \\
+Log Likelihood & \multicolumn{2}{c}{$-$42,715.220} & -61,929.470 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\end{table}
+
+
+
+```{r}
+rbind(obs = table(data$mdu)[1:10], exp = round(colSums(predict(modele_hurdle, type = "prob")[,1:10]))) %>% tab_fun(title="Estimations du modèle Hurdle")
+
+#expCoef <- exp(coef((modele_hurdle)))
+#expCoef <- matrix(expCoef, ncol = 2)
+#rownames(expCoef) <- names(coef(hurdlePart))
+#colnames(expCoef) <- c("Count_model","Zero_hurdle_model")
+#expCoef %>% tab_fun(title = "")
+```
+
+En terme de prédiction le modèle hurdle est vraiment très efficace comparé au modèle de poisson simple.
+
+En ce qui concerne la comparaison des deux modèles (Voir table ci-dessous), on se rend compte dans la partie qui estime les zéros, tous les coefficents sont significatifs comme le modèle de poisson mais dans la partie modèle de comptage, les variables `idp` et `educdec` ne sont plus significatives.
+
+Interprétation des coefficients du modèle Hurdle : 
+
+Pour interpréter l'effet des coefficients, nous faisons : $exp(\hat{\beta})$
+\newline
+En ce qui concerne le modèle Zéro-Hurdle : Nous avons 1.68 plus de chances d'aller au moins 1 fois chez le medecin si on est une femme (coefficient positif et significatif) et 2.76 fois plus de chance si l'on s'estime en mauvaise santé mais au contraire on a 0.27 moins de chance d'aller chez le médecin si l'individu est noir (coefficient négatif et significatif). Plus l'état de santé estimé de l'individu se dégrade, plus il a de chances d'aller chez le médecin.
+
+Pour le modèle avec les valeurs positives, nous avons un nombre moyen de 1.4 visites (individu en excellente santé, homme, blanc) qui augmente de 1.2 chances si l'individu est une femme, de 2.32 si la personne s'estime en mauvaise santé et baisse de 0.67 fois si l'individu est noir. 
+
+En se basant clairement sur les prédictions et le fait que les coefficients sont de mêmes signes et significatifs pour Poisson et Hurlde, d'après nous, **le modèle Hurdle est le modèle que nous devons conserver et qui explique le mieux les données**. De plus, on obtient comme valeur du vraisemblance `r 2*(logLik(modele_hurdle)-logLik(poisson))` donc le modèle Hurdle est meilleur que le modèle de Poisson.
+
+
+
