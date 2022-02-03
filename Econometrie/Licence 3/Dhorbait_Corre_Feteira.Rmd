@@ -1,0 +1,300 @@
+---
+title: "Devoir Econométrie L3 S2 Hétéroscédasticité"
+author: "CORRE FETEIRA DHORBAIT"
+date: "`r Sys.Date()`"
+output:
+   rmdformats::readthedown:
+     highlight: kate
+     #code_folding: show
+   prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.height = 4, fig.width = 8)
+```
+
+```{r package}
+library(stargazer)
+library(psych)
+library(lmtest)
+library(ggplot2)
+library(broom)
+library(sandwich)
+library(leaps)
+library(car)
+library(kableExtra)
+```
+
+
+# Question 1
+
+```{r import}
+#setwd("D:/Econometrie/Licence 3/Semestre 2/Devoir 1")
+food <- read.csv(file='BudgetFood.csv',header=TRUE,sep=",",dec=".")
+```
+
+Tout d'abord, nous ne pensons pas que les valeurs nulles pour wfood soient interressantes dans nos différents modèles. En effet, on veut voir un lien avec la part de salaire allouée à l'alimentation, or si la part est de 0%, comment l'interpréter ? La personne produit-elle elle même ses produits ? De ce point de vue, l'argent depensé pour produire ne doit-il pas être comptabilisé ? La personne n'a peut-être pas de salaire, ce qui signifierai que l'intérêt de l'observer est très faible. Nous avons donc décidé de supprimer ces données. On enlève également la valeur manquante car le sexe de l'individu de référence n'a pas été renseigné.
+```{r NA}
+table(is.na(food$sex))
+food<-na.omit(food)
+food<-food[!food$wfood==0,]
+food<-droplevels(food)
+attach(food)
+```
+
+Comme 1er modèle, nous testons le modèle simple, contenant toutes les variables sans les modifier : <br>
+$wfood_i=\alpha+\beta_1*totexp_i+\beta_2*age_i+\beta_3*size_i + \beta_4*town_i + \beta_5*sex_i + \epsilon_i$
+```{r modele1simple}
+lm1<-lm(wfood~totexp+age+size+town+sex)
+summary(lm1)
+```
+Tous les coefficients sont significatifs sauf sex et la statistique de Fisher est de 2568 donc on rejette H0, l'hypothèse des coefficients nuls. On a ici un $R^2$ de 0.356.
+```{r}
+food$agedummy<-food$age
+## on prend la mediane et on coupe en 2
+## ideal diviser en 3 ?? 16-35 puis 35-65 puis >65 (represente jeune, poser, retraite)
+food$agedummy[food$agedummy<=30]<-0
+food$agedummy[food$agedummy>=30]<-1
+attach(food)
+
+p_agedummy <- ggplot(food) + aes(y = wfood, x = age) + 
+  geom_point(aes(colour=factor(agedummy))) + 
+  geom_smooth(method="lm", se= F, size = 1, aes(colour=factor(agedummy))) + 
+  ggtitle("Salaire en fonction de totexp") +
+  theme(axis.text = element_text(size=8), 
+        title=element_text(size=9),
+        legend.position = "bottom",
+        legend.title = element_blank())
+p_agedummy
+```
+<br> On remarque à travers ce graphique qu'il semblerait y avoir une relation différente entre wfood et les personnes de moins de 30 ans (relation décroissante, on prendra cette catégorie comme référence) et wfood et les personnes de plus de 30 ans(relation croissante). Cela est surement dû à l'âge moyen auquel on a un enfant et il s'agit également de la rupture entre les personnes débutants dans la vie active et les personnes un peu plus avancées et dans des situations souvent plus confortables. <br>
+
+On crée les dummies sex avec comme valeur de référence les hommes, towndummy avec les petites et moyennes villes ($<3$) comme référence et enfin, la variable catégorielle size avec les catégories de 1, 2, 3, 4 et plus de 5 personnes :
+```{r dummies}
+str(food)
+food$sex<-as.integer(food$sex)
+table(food$sex)
+# proportion d'homme tres nettement superieure aux femmes
+food$sex[food$sex=="1"]<-0
+food$sex[food$sex=="2"]<-1
+# donc homme comme référence car = 0
+food$towndummy<-food$town
+food$towndummy[food$towndummy<=3]<-0
+food$towndummy[food$towndummy>=4]<-1
+# donc petite et moyenne ville comme référence
+
+ggplot(food, aes(x=size))+
+   geom_bar(stat="count", width=0.7, fill="darkred")+
+   theme_minimal()+coord_flip()+
+   ggtitle("Nombre de familles en fonction du nombre de personne dans le foyer")+
+   labs(x="Nombre de personnes dans le foyer",y="Nombre de famille")
+#Ici 5 et plus represente une part plus petite, nous alons donc les combiner
+food$sizedummy<-food$size
+food$sizedummy[food$sizedummy==1]<-1
+food$sizedummy[food$sizedummy==2]<-2
+food$sizedummy[food$sizedummy==3]<-3
+food$sizedummy[food$sizedummy==4]<-4
+food$sizedummy[food$sizedummy>=5]<-5
+food$sizedummy=as.factor(food$sizedummy)
+attach(food)
+table(food$sizedummy)/23911
+```
+Nous décidons donc de comparer les petites et moyennes villes aux plus grandes. Il serait donc intérressant de séparer ces deux catégories. En effet, on sait que les salaires sont plus élevés dans les grandes villes mais les prix sont également plus élevés. Nous voulons donc voir si la part du revenu allouée à l'alimentation entre moyennes et grandes villes va être significativement différente de 0 ou pas. Autrement dit, est-ce que l'augmentation des salaires est plus élevée que l'augmentation des prix des denrées alimentaires ? <br>
+En ce qui concerne la taille des familles, l'étude est simple, nous voulons savoir si la part allouée à la nourriture augmente avec le nombre de personnes. De plus, d'après notre diagramme en boîte, il semblerait que seulement 85% des familles sont composées de 5 personnes ou moins. Il y aurait donc 15% des familles composées de plus de 5 personnes, ce qui représente une proportion non négligeable. <br>
+
+
+
+Pour ce 2ème modèle, on décide de mettre les variables age et town en dummies et la variable size en catégorie, comme expliqué ci-dessus : <br>
+$wfood_i=\alpha+\beta_1*totexp_i+\beta_2*agedummy_i+\beta_3*sizedummy_i + \beta_4*towndummy_i + \beta_5*sex_i + \epsilon_i$
+```{r modele2dummies}
+lm2<-lm(wfood~totexp+agedummy+sizedummy+towndummy+sex)
+summary(lm2)
+anova(lm1,lm2)
+stargazer(lm1, lm2, type="text")
+```
+Il semblerait que le modèle simple soit plus précis que le modèle avec les variables dummies. En effet, le $R^2$ du modèle est un peu plus élevé. De plus, on observe que les écarts-types des 2 variables town et age sont plus faibles quand elles ne sont pas mis en dummies, malgré que cela ne soit pas significatif (test ANOVA nous dit que les variances des 2 modèles ne sont pas significativement différentes). De plus, il semblerait que l'ajout des dummies age, town et size a augmenté considérablement la significativité de la variable sex. Cependant, l'erreur des résidus standardisés a légérement augmenté pour le modèle 2. <br>
+
+
+Nous testons, le modèle 3 avec la variable agecarre, en prenant l'âge au carré : <br>
+$wfood_i=\alpha+\beta_1*totexp_i+\beta_2*age_i^2+\beta_3*size_i + \beta_4*town_i +\beta_5*sex_i+ \epsilon_i$
+```{r modele2carre}
+food$agecarre<-(food$age)^2
+attach(food)
+lm3<- lm(wfood~totexp+age+agecarre+size+town+sex)
+summary(lm3)
+stargazer(lm1, lm3, type="text")
+anova(lm1,lm3)
+```
+Tous les coefficients sont significatifs. La variable age a gagné en précision, l'écart-type est passé à 0, mais elle a maintenant un effet plus faible sur wfood. Cependant, le test ANOVA nous indique qu'il semblerait que les variances des 2 modèles ne soient pas significativement différentes. Ici, on remarque que les 2 modèles sont quasiment similaires donc on a pas d'intérêt à mettre la variable age au carré. <br>
+```{r}
+recherche<-regsubsets(wfood~totexp+agedummy+sizedummy+towndummy+sex,int=T,nbest=1,nvmax=9,
+                      method="exhaustive",really.big=T,data=food)
+plot(recherche,scale="r2")
+```
+<br> On remarque que notre modèle peut avoir le même $R^2$ en enlevant la variable sexe, comme vu précédemment. Elle n'était donc pas vraiment significative. De plus cela permet de rendre plus stable la régression.
+
+En conclusion à cette question, le modèle simple et le modèle avec les variables modifiés en dummies sont quasiment similaires, il semble donc plus interressant de garder un modèle ou l'on peut faire des interprétation sur plusieurs catégories pour chaque variable. Toutefois, nous garderons les deux modèles pour faire des comparaisons dans les questions qui suivent.
+
+
+
+# Question 2
+
+On regarde la matrice variance-covariance :
+```{r matricecov}
+food2<-food[,2:6]
+variab=subset(food2)
+pairs.panels(variab)
+```
+<br> On remarque qu'il semblerait y avoir des relations entre la variable totexp et les variables age et size. Nous allons essayer de les mettre en relation pour voir si notre modèle s'améliore ou pas : <br>
+$wfood_i=\alpha+\beta_1*totexp_i+\beta_2*age_i+\beta_3*size_i + \beta_4*town_i + \beta_5*(totexp_i*age_i) + \beta_6*(totexp_i*size_i) + \epsilon_i$
+```{r modele4interaction}
+lm4<-lm(wfood~totexp*age+totexp*size+town)
+summary(lm4)
+```
+Par rapport au modèle 1, nous avons amélioré le $R^2$ avec ce modèle 4. On rejette toujours l'hypothèse H0 des coefficients nuls. De plus, on remarque que nos coefficients sont toujours tous significatifs. Il semblerait donc que l'on peut mettre en relation les dépenses totales et l'âge et la taille du ménage. <br>
+
+
+On essaye maintenant un modèle en mettant en interaction la variable totexp avec les variables agedummy et sizedummy et en prenant la variable town en dummy : <br>
+$wfood_i=\alpha+\beta_1*totexp_i+\beta_2*sizedummy_i + \beta_3*towndummy_i + \beta_4*(totexp_i*agedummy_i) + \beta_5*(totexp_i*sizedummy_i) + \epsilon_i$
+```{r modele5interaction}
+lm5<-lm(wfood~totexp*agedummy+totexp*sizedummy+towndummy)
+summary(lm5)
+```
+Par rapport au modèle 2, nous avons amélioré le $R^2$ avec ce modèle 5. On rejette toujours l'hypothèse H0 des coefficients nuls. De plus, on remarque que nos coefficients sont tous significatifs sauf sizedummy3 et sizedummy4, qui représentent les familles de 3 et 4 personnes. Il semblerait donc que l'on peut mettre en relation les dépenses totales et nos variables catégorielles pour l'âge, la taille du ménage et la taille de la ville. <br>
+```{r test4et5}
+anova(lm4,lm5)
+```
+Avec le test ANOVA, on en conclue que les variances ne sont pas significativement différentes. Enfin, les critères AIC et BIC nous indiquent que le modèle 4 semblerait meilleur que le modèle 5 :
+```{r test4et5suite}
+c(AIC(lm4),AIC(lm5))
+c(BIC(lm4),BIC(lm5))
+```
+On remarquera de plus que pour chaque modèle, les résidus standardisés ont faiblement diminués et le <$R^2$> augmenté.
+Encore une fois, les deux modèles sont similaires.
+
+
+
+
+
+
+# Question 3
+
+
+```{r}
+library(car)
+residualPlots(lm5)
+```
+Le graphique en haut à gauche nous montre que les residus ont une forme non linéaire. Passer au log cette variable, va certainement permettre de corriger la non linéarité. La variable age est bien linéaire, le passage au carré n'est donc pas nécessaire.
+```{r creationlog}
+food$logtotexp<-log(food$totexp)
+attach(food)
+```
+On décide de créer le modèle simple mais en prenant cette fois-ci les logarithmes de la variable totexp  : <br>
+$wfood_i=\alpha+\beta_1*logtotexp_i+\beta_2*logage_i+\beta_3*size_i + \beta_4*town_i + \beta_5*(totexp_i*size_i) + \epsilon_i$
+```{r}
+lm6<-lm(wfood~logtotexp+age+logtotexp*size+town)
+summary(lm6)
+residualPlots(lm6)
+```
+On a donc corrigé la non linéarité. On observe une nette augmentation du $R^2$ qui passe à 0.4119. De plus, les coefficients sont toujours tous significatifs et on remarque qu'il est plus facile de lire les estimations des coefficients comme nous n'avons plus de variables très très petites. La statistique de Fisher est toujours très élevée donc on rejette encore l'hypothèse H0 qui dit que les coefficients sont nuls. <br>
+
+On teste maintenant un modèle pour expliquer les dépenses alimentaires selon les variables dépenses totales, l'âge, la taille du ménage et la taille de la ville : <br>
+$logfood_i=\alpha+\beta_1*logtotexp_i+\beta_2*agedummy_i+\beta_3*sizedummy_i + \beta_4*towndummy_i + \epsilon_i$
+```{r}
+lm7<-lm(wfood~logtotexp+logtotexp*agedummy+logtotexp*sizedummy+towndummy)
+summary(lm7)
+```
+On remarque que tous les coefficients sont différents de 0 et significatifs.
+
+```{r}
+food$logfood=wfood*totexp
+food$logfood=log(food$logfood)
+attach(food)
+```
+
+```{r}
+lm8<-lm(logfood~logtotexp+agedummy+sizedummy+towndummy)
+summary(lm8)
+```
+Ici, le coefficient Beta 1 s'interprete comme l'elasticité de la demande par rapport au revenu. C'est un bien normal. Si le revenu augmente de 1%, la demande pour les biens alimentaires va donc augmenter de 49%.
+
+
+
+On remarque pour chaque régréssion que par rapport aux questions 1 et 2, un modèle log-niveau permet une amélioration du <$R^2$> ainsi que une diminution des residus standardisés, les modèles semblent donc meilleurs en log-niveau que en niveau-niveau.
+
+En ce qui concerne le modèle log-log, nous obtenons une <$R^2$> beaucoup plus élevé, ce qui est plûtot positif, toutefois cela entraîne également une forte hausse des résidus standardisés, ce qui est gênant. Ce modèle ne semble pas adéquat.
+
+
+
+
+
+# Question 4
+
+```{r residu}
+food$resi <- lm7$residuals
+hist(food$resi, freq=FALSE, xlim=c(-2,2),col="darkred")
+## loi normale ok
+ggplot(data = food, aes(y = resi, x =logtotexp)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =logage)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =size)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =town)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =sex)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =logtotexp*size)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+ggplot(data = food, aes(y = resi, x =logtotexp*sex)) + geom_point(col = 'orange',cex=0.05) + 
+    geom_abline(slope = 0)
+```
+Après avoir regarder les résidus de chacune des variables du modèle, on s'aperçoit qu'il semblerait y avoir des problèmes d'hétéroscédasticité pour la variable logtotexp, age. On le vérifie avec le test de Breusch-Pagan :
+
+```{r}
+var.func <- lm(resi^2 ~ logtotexp+logtotexp*agedummy+logtotexp*sizedummy+towndummy, data = food)
+summary(var.func)
+qchisq(.95, df = 1)
+bptest(lm7)
+```
+Il y a bien présence d'hétéroscédasticité.
+
+Procédons maintenant au test de White : 
+```{r}
+ressq=food$resi^2
+modres <- lm(ressq~logtotexp+logtotexp*agedummy+logtotexp*sizedummy+towndummy, data=food)
+summary(modres)
+gmodres <- glance(modres)
+Rsq <- gmodres$r.squared
+S <- gmodres$df
+chisq <- N*Rsq
+pval <- 1-pchisq(chisq, S-1)
+pval
+```
+Ce test confirme toujours la présence d'hétéroscédasticité.
+
+Esseyons de résolver l'hétérosédasticité : 
+
+```{r}
+coeftest(lm7, vcov = vcovHC(lm7, "HC1"))
+
+
+varfunc.ols <- lm(log(resi^2) ~ log(logtotexp)+sizedummy+totexp*agedummy+towndummy+totexp*sizedummy, data = food)
+food$varfunc <- exp(varfunc.ols$fitted.values)
+lm7_cor<-lm(wfood~logtotexp+logtotexp*agedummy+logtotexp*sizedummy+towndummy,weights=1/sqrt(varfunc))
+summary(lm7_cor)
+stargazer(lm7,lm7_cor,type="text")
+
+lm7 %>% vcovHC %>% diag() %>% sqrt()
+
+```
+Amélioration du <$R^2$> et correction des ecarts-types.
+
+
+
+
