@@ -1,0 +1,602 @@
+---
+title: "Modèle de prédiction du concours d'Economie"
+author: "Guillaume CORRE"
+date: ""
+lang: fr
+output:
+ pdf_document:
+    df_print: kable
+    keep_tex: yes
+    number_section: yes
+    toc: yes
+ rmdformats::readthedown:
+   gallery: no
+   highlight: tango
+   lightbox: yes
+   self_contained: yes
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE, cache=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.height = 5.5, 
+                      fig.width = 12, sanitize = TRUE, echo = FALSE, cache = FALSE)
+```
+
+```{r}
+library(mosaic)
+library(lmtest) #Pour le test d'heteroscedasticite
+library(stargazer) #Pour les sorties des regressions
+library(popbio)
+library(boot)
+library(ROCR)# Courbe ROC
+library(ggplot2)# Graphiques propres
+library(ggpubr)#Pour utilisation de ggarrange
+library(corrplot)#Pour matrice de correlation
+library(sandwich)#Pour correction de l'heteroscedasticite
+library(pROC)#Courbe roc automatique avec AUC
+library(kableExtra)# Jolis tableaux.
+```
+
+
+```{r}
+tab_fun <- function(tab, above = FALSE, title = title, font_size = 10, header = NULL){
+  if(above){
+    tab %>% kable(caption = title) %>%
+      kable_styling(font_size = font_size, full_width=FALSE, stripe_color = "lightgray", stripe_index = 0,
+                    latex_options = c("HOLD_position", "striped"), position = "center") %>%
+      add_header_above(header = header, bold=TRUE, color="red")%>%
+      column_spec(1, bold=T) %>%
+      row_spec(0, bold=T)
+  } else {
+    tab %>% kable(caption = title) %>%
+      kable_styling(font_size = font_size, full_width=FALSE, stripe_color = "lightgray", stripe_index = 0,
+                    latex_options = c("HOLD_position", "striped"), position = "center") %>%
+      column_spec(1, bold=T) %>%
+      row_spec(0, bold=T)
+  }
+}
+
+```
+
+```{r}
+cv <- function(x, y) {
+  t <- table(x, y)
+  chi <- suppressWarnings(chisq.test(t))$statistic
+  cramer <- sqrt(chi / (length(x) * (min(dim(t)) - 1)))
+  cramer
+}
+
+cramer.matrix<-function(y, fill = TRUE){
+  col.y<-ncol(y)
+  V<-matrix(ncol=col.y,nrow=col.y)
+  for(i in 1:(col.y - 1)){
+    for(j in (i + 1):col.y){
+      V[i,j]<-cv(pull(y,i),pull(y,j))
+    }
+  }
+  diag(V) <- 1 
+  if (fill) {
+    for (i in 1:ncol(V)) {
+      V[, i] <- V[i, ]
+    }
+  }
+  colnames(V)<-names(y)
+  rownames(V)<-names(y)
+  V
+}
+```
+
+\newpage
+
+# Question 1
+
+```{r}
+library(readxl)
+data <- read_excel("Concours.xlsx")
+```
+
+```{r}
+#str(data) Donne la structure de la base de données
+data$annee<-data$Année
+data$nationalite<-data$nationalité
+data$admissibilite<-data$`admissi-bilité`
+data<-data[,-c(1,2,4,11)]
+#On met les variables en facteur
+data$annee=as.factor(data$annee)
+data$sexe=as.factor(data$sexe)
+data$nationalite=as.factor(data$nationalite)
+data$retard=as.factor(data$retard)
+data$`série de bac`=as.factor(data$`série de bac`)
+data$`mention de bac`=as.factor(data$`mention de bac`)
+data$`formation suivie`=as.factor(data$`formation suivie`)
+data$`mention obtenue`=as.factor(data$`mention obtenue`)
+data$admissibilite=as.factor(data$admissibilite)
+#str(data) #On vérifie que tous est bien changé
+```
+
+```{r}
+#summary(data) Aucunes données manquantes.
+```
+
+## Etude statistique 
+
+
+```{r}
+m<-cramer.matrix(data)
+#corrplot(m, method="number")
+#Note épreuve écrite et admissibilité sont corrélés à 1, ce sont les mêmes variables.
+```
+
+
+
+```{r}
+graphe_sexe<-ggplot(data=data)+aes(x=data$sexe, y=data$`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de la nationalité",y="Note",x="Nationalité")
+
+    
+graphe_nationalite<-ggplot(data=data)+aes(x=data$nationalite, y=data$`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction du sexe",y="Note",x="Nationalité")
+
+ggarrange(graphe_nationalite, graphe_sexe)
+```
+
+```{r}
+tab_sexe<-table(data$sexe, data$admissibilite)
+prop_sexe<-t(prop.table(tab_sexe, margin =1))
+tab_nat<-table(data$nationalite, data$admissibilite)
+prop_nat<-t(prop.table(tab_nat, margin =1))
+tab_1<-cbind(prop_sexe, prop_nat)
+tab_1 %>% tab_fun(title = "Taux de réussite en fonction du sexe et de la nationalité", above=T)  %>%
+  add_header_above(c("","Sexe" = 2,"Nationalité"=2))
+
+
+```
+
+On remarque que les variables sexe et nationalité ne semblent pas discriminer la note, et donc ne discrimine pas l'admissibilité. On peut dire que le fait d'être une femme ou un homme ne change pas le taux de réussite, tout comme le fait d'être étranger ou non. Grâce au tableau, on remarque que le taux est aux alentours de 50% de réussite et 50% d'échec pour chaque modalités de chaque variables. Ces deux variables ne sont donc pas discriminantes.
+
+```{r}
+graphe_annee<-ggplot(data=data)+aes(x=annee, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de l'année",y="Note",x="Année")
+
+graphe_annee
+```
+
+```{r}
+tab_annee<-prop.table(table(data$annee,data$admissibilite),margin=1)
+tab_annee<-t(tab_annee)
+tab_fun(tab_annee, title="Taux de réussite en fonction de l'année") %>%
+  add_header_above(c("","Année" = 6))
+```
+
+
+L'année ne semble également avoir un impact majeur sur le taux d'admissibilité. En effet, lorsque l'on observe le tableau, l'on voit que le taux de réussite est toujours entre 0.46 et 0.55 entre les différentes années. Cette variable ne semble pas discriminer. Le taux de réussite est constant entre les années, nous n'utiliserons pas cette variable dans nos futurs modèles.
+
+
+```{r}
+graphe_retard<-ggplot(data=data)+aes(x=retard, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction du retard",y="Note",x="Retard")
+
+graphe_retard
+```
+
+```{r}
+tab_retard<-prop.table(table(data$retard,data$admissibilite),margin=1)
+tab_retard<-t(tab_retard)
+tab_fun(tab_retard, title="Taux de réussite en fonction du retard") %>%
+  add_header_above(c("","Retard" = 5))
+```
+
+
+Le retard lui, semble avoir un impact très important sur la note obtenu par les candidats et donc sur l'admissibilité. Plus le retard est important, plus la note est mauvaise. On voit clairement sur le tableau que le taux de réussite passe de 85\% pour un élève en avance à 15\% pour un élève avec 3 ans de retard.
+Cette variable discrimine.
+
+```{r}
+graphe_serie<-ggplot(data=data)+aes(x=`série de bac`, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de la serie de bac",y="Note",x="Bac")
+
+graphe_mention_bac<-ggplot(data=data)+aes(x=`mention de bac`, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de la mention au bac",y="Note",x="Mention")
+
+ggarrange(graphe_serie, graphe_mention_bac)
+
+```
+
+
+```{r}
+tab_serie<-prop.table(table(data$`série de bac`,data$admissibilite),margin=1)
+tab_serie<-t(tab_serie)
+tab_mentionbac<-prop.table(table(data$`mention de bac`,data$admissibilite),margin=1)
+tab_mentionbac<-t(tab_mentionbac)
+tab_3<-cbind(tab_serie,tab_mentionbac)
+tab_fun(tab_3, title="Taux de réussite de la série et de la mention au bac") %>%
+  add_header_above(c("","Série" = 2,"Mention"=4))
+```
+
+
+Le fait d'avoit fait un bac S ou ES ne semble pas impacter les note. Le taux de réussite est différent de moins de 10\% entre les deux filières.
+Les mentions bien et très bien au bac réussissent meieux que les mentions AB et passable. En effet, nous sommes aux alentours de 80\% pour les mentions bien et très bien et 45-50\% pour les mentions AB et Passable.
+
+```{r}
+graphe_formation<-ggplot(data=data)+aes(x=`formation suivie`, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de la formation",y="Note",x="Formation")
+
+graphe_mention_formation<-ggplot(data=data)+aes(x=`mention obtenue`, y=`note épreuves écrites`)+
+    geom_boxplot(fill="#E3E3E3",color="darkred")+
+    stat_summary(aes(label=..y..),fun = function(x) round(median(x),2),
+                 geom="text", size=3, color="black", vjust=-0.9) +
+    stat_summary(fun=median, geom="point", shape=18, size=3.5, color="#595959", fill="black") +
+      theme_minimal()+
+      labs(title = "Résultat en fonction de la mention formation",y="Note",x="Mention")
+
+ggarrange(graphe_formation, graphe_mention_formation)
+
+
+```
+
+```{r}
+tab_formation<-prop.table(table(data$`formation suivie`,data$admissibilite),margin=1)
+tab_formation<-t(tab_formation)
+tab_mentionobt<-prop.table(table(data$`mention obtenue`,data$admissibilite),margin=1)
+tab_mentionobt<-t(tab_mentionobt)
+tab_3<-cbind(tab_formation,tab_mentionobt)
+tab_fun(tab_3, title="Taux de réussite en fonction de la formation et mention obtenue")%>%
+  add_header_above(c("","Formation" = 4,"Mention"=4))
+```
+
+
+Enfin, la formation suivie a un impact important, les formations telles que BTS et DUT réussissent beaucoup moins bien que les formations tels que MIASHS et SEG.
+De plus, la mention semble joué un rôle surtout pour la mention passable qui à un taux faible par rapport aux 3 autres. La mention TB et B ont quasiment le même taux de réussite.
+
+```{r}
+ggplot_bac<-ggplot(data=data) +
+  aes(x=`note épreuves écrites`)   +           geom_histogram(bins = 15 , col = "white", fill="darkred")+ ggtitle("Distribution de la variable note")         #ggplot_bac
+#Les notes semblent suivre une loi normal d'espérance 12.
+```
+
+La direction du département souhaiterait publier ces statistiques tout simplement pour déterminer qu'elles sont les résultats obtenus en fonction des charactéristiques des candidats. Cette publication sera informative pour les futurs candidats.
+Les conséquences de cette publication seraient que des élèves ayant des caractéristiques similaires aux personnes ayant eu de mauvaises notes, ne vont pas vouloir s'inscrire et tenter le concours. Cela pourrait donc démotiver des candidats potentiels.
+
+# Question 2
+
+
+```{r}
+
+data_lm <-data[,-10] #On enlve admissibilité pour l'autocorrélation (note et admissibilite tres corrélées)
+lm <- lm(data=data_lm, data$`note épreuves écrites`~ sexe + nationalite + retard + `série de bac` +`mention de bac` +`formation suivie` + `mention obtenue`)
+
+```
+
+Pour cette question, nous allons réaliser un modèle linéaire avec les notes en variable à expliquer. Nous ne gardons pas la variable admission car elle est formé à partir de la variable note (corrélée à 100%) ainsi que la variable année (une regréssion préliminaire a été effectuée afin de s'assurer de la non-significativité).
+
+Si on observe les coefficients (voir annexe), toutes les modalités de la variable retard sont significatives et ont un coefficient négatif, c'est-à-dire que plus l'année de retard est important, moins la note sera bonne. Les coefficients associés aux variables `formation` et `mention obtenue` sont également sigificatifs. Pour la variable `formation`, on remarque que les coefficients sont tous positifs, ce qui signifie que le fait de faire une formation différente de BTS (catégorie de référence) augmentera la note. De plus, seule la mention passable du bac est très significative avec un coefficient négatif, donc si l'individu prend cette modalité, sa note va baisser. 
+
+Analyse d'un coefficient : Par exemple pour la variable `retard`, la catégorie de référence est -1, ce qui signifie qu'un étudiant ayant un retard de 0 aura une baisse moyenne de la note finale de 0.58 par rapport à un élève en avance de 1 an. Un élève en retard de 3 ans aura une baisse moyenne significative de 2.17 sur sa note finale.
+On peut également voir que les variables  `annee` et `nationalité` ont des coefficients non significatifs. Toutefois, ces variables ont quand même un intérêt statistique, sans qu'elles soient significatives, elles sont intéressantes à observer pour l'étude. On les gardera donc pour le futur.
+On peut donc faire le lien avec notre analyse statistique réalisée précèdemment ou l'on retrouve en variables ayant un coefficient significatif, les variables discriminantes et en variables ayant un coefficient non significatif, les variables qui semblaient non discriminantes dans notre analyse.
+
+# Question 3
+
+Dans cette question, nous allons réaliser un modèle à probabilité linéaire. Pour cela, nous utilisons la même méthode que pour une regression linéaire simple mais on met en variable à expliquer, une variable dichotomique (ici l'`admissibilite`).
+Dans un modèle à probabilité linéaire, $Y_i$ suit une loi de bernoulli. On a donc $$E(Y_i)= 0(1-P_i)+1(P_i) = P_i$$ avec $$E(Y_i|X_i) = B_0 + \sum B_kX_i = P_i$$ et doit être compris entre 0 et 1.
+De plus, dans ce type de modèle, nous allons chercher à estimer la probabilité associé à l'évenement $P_i$=1. Si $\hat P_i <0.5$, on lui attribuera la valeur 0, si $\hat P_i >0.5$, la valeur 1.
+
+```{r}
+data$admissibilite<- ifelse(data$`note épreuves écrites`>= 12 , 1, 0)
+data_lpm<-data[,-c(7)] #On enleve note car trop corrélée avec admissibilité.
+#data<-data[,-c(1,2,3,9)]
+model_lpm = lm(admissibilite ~ sexe + nationalite + retard + `série de bac` +`mention de bac` +`formation suivie` + `mention obtenue`, data = data_lpm)
+```
+
+Voici la sortie R du test d'hétéroscédasticité : 
+
+```{r}
+bptest(model_lpm)
+```
+
+La statistique du test de Breush-Pagan est de 92.465, et la p-value associée est très faible (largement inférieur à 0.05). La p-value étant < 0.05, nous rejetons l'hypothèse $H_O$ de présence d'homoscédasticité et donc on est en présence d'hétéroscédasticité.
+En effet, même si $E(\epsilon_i)$ = 0, la distribution de l'erreur suivant une loi de bernoulli, nous avons $var(\epsilon_i)=P_i(1-P_i)$ et dépend donc de X, ce qui cause l'hétéroscédasticité. Afin de résoudre ce problème, nous allons appliquer une pondération au modèle en utilisant la valeur prédite $\hat Y_i$. On aura $w_i=\hat Y_i*(1-\hat Y_i)$ comme poids. Enfin,le modèle utilisera weights = $\frac{1}{\sqrt w_i}$ dans le modèle. Toutefois, cela pose un problème pour les valeurs prédites de probabilité < 0 et supérieur à 1 (ce qui montre la limite du modèle à probabilité linéaire). Nous allons donc affecter un valeur très proche de 0 si $\hat Y_i$ < 0 et une valeur proche de 1 si $\hat Y_i$ > 1.
+
+```{r}
+y_hat<-fitted(model_lpm)
+#sum(y_hat<0)
+#sum(y_hat>1)
+data_lpm$fitt<-y_hat
+#################
+#On trie les probabilitees <0 et > 1
+data_lpm$fitt[data_lpm$fitt<0]<-0.0001
+data_lpm$fitt[data_lpm$fitt>1]<-0.99999
+###################
+#On applique la distribution des residus
+data_lpm$h<-data_lpm$fitt*(1-data_lpm$fitt)
+##################
+#Méthode 2
+#y_hat[y_hat<0]<-0.0001
+#y_hat[y_hat>1]<-0.9999
+#sigsq<-y_hat*(1-y_hat)
+#wght<-1/sigsq
+##################
+#Correction du modèle
+model_lpm_cor<-lm(admissibilite ~ sexe + retard + `série de bac` +`mention de bac` +`formation suivie` + `mention obtenue`+ annee + nationalite, data = data_lpm, weights=1/sqrt(h))
+
+```
+
+Nous pouvons maintenant comparer les deux modèles (dont les résultats se trouvent en annexe) : On peut déja remarquer que le $R2$ a été amélioré pour le modèle corrigé, passant de 0.335 à 0.506. En ce qui concerne les écarts-types, ils ont tous été diminués dans le modèle corrigé et la valeur des coefficents est quasiment similaire entre les deux modèles. On remarque comme à la question 2, que les variables `retard`, `formation`, `mention obtenue` sont significatives. On retrouve également la non significativité des variables  `nationalité` et `année`. \newline
+Voici un exemple d'interprétation :  le fait d'avoir retard = 0, on a un coefficient négatif de -0.13, c'est à dire qu'il y a 13\% de chance de moins d'être admissible. Un retard de 3 ans, entraine une baisse de 62\% de chance d'être admissible par rapport à un étudiant en avance de 1 an (catégorie de référence).
+Un autre coefficient important est le fait d'avoir suivi une formation MIASHS qui augmente les chances d'être admissible de 42\% par rapport à quelqu'un ayant effectué un BTS. \newline
+Voici la matrice de confusion associée au modèle :
+
+```{r}
+confusion_lpm<-table(true = data$admissibilite, pred = round(fitted(model_lpm_cor)))
+tab_fun(confusion_lpm,title="Matrice de confusion lpm") %>%
+  add_header_above(c("","Prévision"= 2))
+```
+
+Nous avons un taux de bien prédit de  `r round((confusion_lpm[1]+confusion_lpm[4])/nrow(data_lpm)*100,3)`\%. On peut également voir que l'on prédit un peu mieux les personnes admises que les personnes non admises. \newline
+Enfin, voici la représentation de la courbe ROC
+
+```{r, fig.height=4}
+pred_lpm<- prediction(fitted(model_lpm_cor), data$admissibilite)
+#plot(performance(pred_lpm,"acc" ), ylim=c(0,1))
+plot(performance(pred_lpm, "tpr", "fpr"), ylim=c(0,1),main="Courbe ROC modèle lpm_corrigé")
+abline(0,1, col="red")
+
+auc<-performance(pred_lpm,"auc")@y.values[[1]]
+```
+
+La ligne rouge est la première bissectrice. On a une AUC de `r round(auc,3)`.
+
+Toutefois l'interprétation de ce modèle à probabilité linéaire pose problème puisque les estimations peuvent aller de $-\infty$ à $+\infty$. On va donc utiliser des modèles qui assure une loi de distribution entre 0 et 1 : les modèles Logit et Probit.
+
+# Question 4
+
+Dans cette question, nous allons réaliser un modèle logit. Au contraire du modèle à probabilité linéaire, ce modèle va pouvoir se modéliser comme une forme en "S". De plus, la distribution de l'erreur dans ce modèle suit une loi logistique avec $E(\epsilon)= \mu$ et $V(\epsilon)= \frac{s^2 \pi^2}{3}$, or le modèle logit ne peut être exprimé que si $E(\epsilon)= 0$ et $V(\epsilon)= \frac{\pi^2}{3}$. \newline
+On retrouve en annexe, les résultat de cette regression. Les coefficients nous donnent une idée sur la relation entre variables explicatives et variables à expliquer, toutefois ils ne peuvent pas être interprétés directement. Pour cela, nous devons passer par les odds ratios. Pour les calculés, on prend l'exponentielle du coefficient. Voici un tableau des odds ratios du modèle logit : 
+
+```{r}
+data_logit<-data[,-7] #On garde que la variable admissibilité pour expliqué et donc on enlève la variable note.
+
+#Modèle
+logit1 = glm(admissibilite ~  sexe + nationalite + retard + `série de bac` +`mention de bac` +`formation suivie` + `mention obtenue`,data=data_logit, family=binomial(link=logit))
+
+logit_pred<-prediction(fitted(logit1), data$admissibilite)
+
+#summary(logit1)
+```
+
+
+## Odds ratios et IC à 95% 
+```{r, fig.height=4}
+rapport_de_chance<-exp(cbind(OR = coef(logit1), confint(logit1)))
+tab_fun(rapport_de_chance, title="Rapports de chance")
+```
+
+**Interpretation des odds ratios**
+
+Tout d'abord, il est utile de rappeler que : 
+
+* Si le odd ratio est entre 0 et 1, alors cela correspond à un coefficient négatif et donc une relation negative.
+
+* Si le odd ratio est supérieur à 1, cela correspond à une coefficient positif et donc une relation positive.
+
+* Si le odd ratio = 1, alors il n'y a pas de différence entre les modalités ou la variable explicative n'a pas d'effet.
+
+Dans notre modèle, on remarque que les coefficients non significatifs ont des odds ratios proches de 1, ce qui est logique car plus le ratio est proche de 1, moins l'effet est important.
+
+Les étudiants en retard de 3 ans ont 0.03 fois plus de chance d'être admissible que les élèves en avance de 1 an. Plus précisement, les élèves en avance de 1 an ont `r round(1/0.03,3)` fois plus de chance d'être admis qu'un élève en retard de 3 ans.
+Une autre variable importante est la `formation suivie`, on peut voir que les étudiants ayant suivi la formation MIASHS ont 8.93 fois plus de chance d'être admis qu'un étudiant ayant fait un BTS et 4.16 fois plus de chance pour un élève ayant suivi SEG.
+Enfin pour la variable `mention obtenue`, les étudiants ont 2,3 et 1.8 fois plus de chance de réussir pour une mention TB et B respectivement que un étudiant ayant eu une mention AB. Au contraire un étudiant ayant eu une mention AB aura `r 1/0.41` fois plus de chance d'être admis qu'un élève avec mention passable.
+
+
+## Pseudo_R2
+
+```{r}
+data_logit0 <- update(logit1, formula = . ~ 1)
+pseudo<-1 - as.vector(logLik(logit1)/logLik(data_logit0))
+```
+
+Nous avons un pseudo $R2$ de `r round(pseudo,3)`.
+
+## Matrice de confusion
+
+Voici la matrice de confusion du modèle logit
+
+```{r}
+confusion_logit<-table(true = data$admissibilite, pred = round(fitted(logit1)))
+tab_fun(confusion_logit,title="Matrice de confusion logit") %>%
+  add_header_above(c("","Prévision"= 2))
+```
+
+## Différents estimateurs : 
+
+```{r}
+pred_fausses<-(confusion_logit[2]+confusion_logit[3])/nrow(data_logit)
+```
+
+Ratio de mal prédit = `r round((confusion_logit[2]+confusion_logit[3])/nrow(data_logit)*100,3)`\%
+
+
+Ratio de bien prédit = `r round((confusion_logit[1]+confusion_logit[4])/nrow(data_logit)*100,3)`\%
+
+Sensibilité : capacité à prédire correctement le succès = `r round((confusion_logit[4]/(confusion_logit[2]+confusion_logit[4]))*100,3)` \%. 
+
+Spécificité : capacité à predire correctement l'échec =
+  `r round((confusion_logit[1]/(confusion_logit[1]+confusion_logit[3])*100),3)`\% 
+
+## Courbe ROC
+
+La courbe ROC est une représentation de l'arbitrage entre taux de faux positif et de vrais positif, c'est un arbitrage entre sensibilité et spécificité.
+L'aire sous la courbe ROC (AUC) mesure le pouvoir prédictif du modéle.
+
+```{r}
+pred_logit<- prediction(fitted(logit1), data$admissibilite)
+#plot(performance(pred,"acc" ))
+#plot(performance(pred, "tpr", "fpr"))
+#abline(0,1)
+```
+
+```{r}
+#predict<-predict(logit1, type = "response")
+#0.5 meilleur decoupage
+#table(data_logit$admissibilite, predict > 0.5)
+```
+
+```{r, fig.height=4.5}
+test_prob = predict(logit1, newdata = data, type = "response")
+logit_prediction <- prediction(fitted(logit1),data_logit$admissibilite)
+auc<-performance(logit_prediction,"auc")@y.values[[1]]
+courbe_roc_logit<-roc(data$admissibilite ~ test_prob, plot = TRUE, print.auc = TRUE)
+plot(courbe_roc_logit, print.auc =T)
+```
+
+L'AUC du modèle logit est de `r round(auc,3)`.
+
+# Question 5
+
+
+Nous allons maintenant estimer un modèle probit et le comparer à nos autres modèles afin de choisir le meilleur modèle final pour nos prédictions. Les erreurs du modèle probit suivent une loi normale comparé au modèle logit ou les erreurs suivent une loi logistique. Le modèle probit peut être mis en place seulement si $E(\epsilon)=0$ et $V(\epsilon)=1$.
+Il faut également noter que nous ne pouvons pas comparer les coefficients du modèle logit et probit puisque les normalisations ne sont pas les mêmes. Pour comparer les deux modèles, on utilise le facteur  $\frac{\pi}{\sqrt3}$, ce qui signifie que $\beta_{logit} \sim \frac{\pi}{\sqrt3}*\beta_{probit}$. (Notons que le signe du coefficient restera le même entre logit et probit).
+
+```{r}
+probit1 = glm(admissibilite ~ annee + sexe + nationalite + retard + `série de bac` +`mention de bac` +`formation suivie` + `mention obtenue`,data=data_logit, family=binomial(link=probit))
+
+stargazer(logit1, probit1, model_lpm_cor, lm, type="text")
+```
+
+Voici la matrice de confusion associée au modèle probit et le taux de bien prédit.
+
+```{r}
+confusion_probit<-table(true = data$admissibilite, pred = round(fitted(probit1)))
+tab_fun(confusion_probit,title="Matrice de confusion probit") %>%
+  add_header_above(c("","Prévision"= 2))
+```
+
+Le taux de bien prédit est de `r round((confusion_probit[1]+confusion_probit[4])/nrow(data_logit)*100,3)`\%.
+
+Le taux de mal prédit est de `r round((confusion_probit[2]+confusion_probit[3])/nrow(data_logit)*100,3)`\%.
+
+Sensibilité : capacité à prédire correctement le succès = `r round((confusion_probit[4]/(confusion_probit[2]+confusion_probit[4]))*100,3)` \%. 
+
+Spécificité : capacité à predire correctement l'échec =
+  `r round((confusion_probit[1]/(confusion_probit[1]+confusion_probit[3])*100),3)`\% 
+
+## Comparaison graphique : 
+
+```{r, fig.height=4}
+pred_probit<- prediction(fitted(probit1), data$admissibilite)
+
+plot(performance(pred_lpm, "tpr", "fpr"), ylim=c(0,1), main="Courbe ROC", col="red")
+plot(performance(pred_logit, "tpr", "fpr"), ylim=c(0,1), col="blue", add=T)
+plot(performance(pred_probit, "tpr", "fpr"), ylim=c(0,1), col="green", add=T)
+abline(0,1, col="red")
+legend("bottomright",legend=c("LPM", "Logit", "probit"),
+       col=c("red","blue", "green"),lty=1,lwd=2)
+```
+
+On peut remarquer sur ce graphique que l'on peut à peine différencier les différents modèles. Cela denote la similitude de nos modèles et leurs pouvoirs prédictifs quasiment similaires.
+
+```{r}
+test_prob = predict(probit1, newdata = data, type = "response")
+probit_prediction <- prediction(fitted(probit1),data_logit$admissibilite)
+auc_probit<-performance(probit_prediction,"auc")@y.values[[1]]
+#roc(data$admissibilite ~ test_prob, plot = TRUE, print.auc = TRUE)
+```
+
+L'AUC du modèle probit est de `r round(auc_probit,3)`.
+
+## Comparaison des résultats
+
+Tout d'abord, au vu des résultat, nous pouvons déjà mettre de coté le modèle économétrique de regression linéaire simple. En effet, celui-ci prédit la note d'un étudiant, or nous voulons prédire si l'étudiant va être admissible ou non, donc un modèle binaire. De plus, le $R2$ associé (0.468) est plus faible que pour un modèle à probabilité linéaire corrigé.
+
+En ce qui concerne le modèle à probabilité linéaire, nous pouvons également le mettre de coté. Malgrès sa facilité dans sa création, il pose des problèmes, notamment celui de l'hétéroscédasticité, mais également le fait que le $Y_i$ prédit peut être en dehors de 0-1. Enfin, un dernier problème sera le fait que nous voulons obtenir une courbe plus en forme de "S" plutôt qu'une droite et les modèles probit et logit seront donc plus adaptés. Toutefois, il sera difficile de choisir un des deux modèles car ils sont très similaires en terme d'ajutement statistique. Les différences se font pour de grand échantillons, ici avec 2000 données, l'échantillon ne semble pas assez grand.
+
+Finalement, pour pouvoir comparer le modèle probit au modèle logit, il nous faut déterminer le modèle qui à le meilleur taux de bonnes prédictions grâce aux matrices de confusion. Le ratio est : $$\frac{\text{Nombres de bonnes prédictions}}{\text{Nombres d'observations}}$$
+
+En ce basant sur ce ratio, nous avons un taux de bonnes prédictions de `r round((confusion_logit[1]+confusion_logit[4])/nrow(data_logit)*100,3)`\% pour le modèle logit et de `r round((confusion_probit[1]+confusion_probit[4])/nrow(data_logit)*100,3)`\% pour le modèle probit.
+Rappellons que le taux de bonnes prédictions pour le modèle à probabilité linéaire corrigé est de `r round((confusion_lpm[1]+confusion_lpm[4])/nrow(data_lpm)*100,3)`\%. Nous avons donc les mêmes taux de réussite pour le modèle à probabilité linéaire et le modèle logit.
+Le meilleur modèle pour évaluer les chances de réussite pour un étudiant sera donc le modèle logit dans notre cas. (En ce basant sur ce qui a été vu précèdemment concernant les limites du modèle à probabilité linéaire).
+
+
+\newpage
+
+# Annexe
+
+## Question 1
+
+```{r, fig.height= 4.5}
+ggplot_bac
+```
+
+La distribution des notes semblent suivre une distribution normale de d'espérance $\mu$=12. Donc un taux d'amission général autour de 0,5.
+
+## Question 2
+
+```{r}
+stargazer(lm, type="text")
+```
+
+## Question 3
+
+```{r}
+stargazer(model_lpm, model_lpm_cor, type="text")
+```
+
+## Question 4
+
+```{r}
+summary(logit1)
+```
+
+
+
+
+
+#####################################
+#####################################
+
+```{r}
+coef_logit<-(1.81*probit1$coefficients)
+odds_probit<-exp(probit1$coefficients)
+odds_logit<-exp(coef_logit)
+comparaison<-cbind(odds_logit,odds_probit)
+#tab_fun(comparaison, title="Comparaison logit, probit")
+```
+
+```{r}
+#On remarque que plus le coefficient est #grand dans le négatif ou le positif, plus #l'écart entre probit et logit sera grand. #Pour les coefficients proche de 0, les odds #ratios sont quasiments similaires.
+```
